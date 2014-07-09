@@ -13,7 +13,7 @@ library(reshape2)
 library(leaflet)
 #library(plotGoogleMaps)
 
-## ggplot theme
+### ggplot theme ####
 th.bar <- theme(panel.background = element_rect(fill="white"), 
                 axis.text.y=element_text(size=12),
                 axis.text.x=element_text(size=12),
@@ -47,8 +47,10 @@ shinyServer(function(input, output, session) {
   ce <- cbind(ce, points.wgs84)
   names(ce)[17:18] <- c("lon", "lat")
   
-  ## Leaflet Map
+  ##### Leaflet-Shiny Map ######
+  
   map <- createLeafletMap(session, 'map')
+  #map2 <- map
   
   pointsInBounds <- reactive({
    if (is.null(input$map_bounds))
@@ -62,39 +64,103 @@ shinyServer(function(input, output, session) {
              lon >= lngRng[1] & lon <= lngRng[2])
   })
   
+  ## Color assignment should NOT be dynamic with zoom and subsetting of points.
+  getCol <- reactive({
+    cols <- brewer.pal(5, "YlOrRd")[as.numeric(cut(ce[[input$mapvar]], breaks=5))]
+    print(head(cols))
+    return(cols)
+  })
+
+
   observe({
-    pts <- pointsInBounds()
-    print(dim(pts))
-    pts$col <- brewer.pal(5, "YlOrRd")[as.numeric(cut(pts$coastal_exposure, breaks=5))]
+    ce$col <- getCol()
+    #print(head(ce$col))
+    #pts <- pointsInBounds()
+    #print(dim(pts))
     map$addCircle(
-      pts$lat,
-      pts$lon,
+      ce$lat,
+      ce$lon,
       (200/input$map_zoom)^2,
-      row.names(pts),
+      row.names(ce),
 #       lapply(brewer.pal(5, "YlOrRd"), function(x) {
 #         list(color = x)
 #       })
-      list(fill=TRUE, fillOpacity=1, stroke=F, fillColor=pts$col)
+      list(fill=TRUE, fillOpacity=1, stroke=F, fillColor=ce$col)
     )
   })
-  
-  output$hist <- renderPlot({
-    pts <- pointsInBounds()
-    pts <- pts[,5:13]
-    plotpts <- melt(pts)
-    gg.hist <- ggplot(plotpts) + 
-      geom_bar(aes(x=value), width=.4) +
-      facet_wrap("variable", nrow=3, ncol=3) +
-      #scale_fill_manual(name="RISK", values=riskycols) +
-      th.bar
-    print(gg.hist)
-  })
-  
+
+output$hist <- renderPlot({
+  pts <- pointsInBounds()
+  pts <- pts[,5:13]
+  plotpts <- melt(pts)
+  gg.hist <- ggplot(plotpts) + 
+    geom_bar(aes(x=value), width=.4) +
+    facet_wrap("variable", nrow=3, ncol=3) +
+    #scale_fill_manual(name="RISK", values=riskycols) +
+    th.bar
+  print(gg.hist)
+})
+
 #   locale <- matrix(NA, nrow=2, ncol=2, dimnames=list(c("x", "y"), c("min", "max")))
 #   locale[1,1] <- min(ce$lon)
 #   locale[1,2] <- max(ce$lon)
 #   locale[2,1] <- min(ce$lat)
 #   locale[2,2] <- max(ce$lat)
+#   ggbase <- get_map(location=locale, maptype="terrain", color="color", source="google", zoom=input$zoom)
+# 
+# 
+# output$ggmaps <- renderPlot({
+#   ce$mapvar <- ce[[input$mapvar]]
+#   gg.layer <- ggmap(ggbase) +
+#     geom_point(data=ce, aes(x=lon, y=lat, color=cut(mapvar, 5))) +
+#     scale_color_brewer(palette="YlOrRd", type="qual")
+#   print(gg.layer)
+# })
+
+# observe({
+#   pts <- pointsInBounds()
+#   print(dim(pts))
+#   pts$col <- brewer.pal(5, "YlOrRd")[as.numeric(cut(pts$wave_exposure, breaks=5))]
+#   map2$addCircle(
+#     pts$lat,
+#     pts$lon,
+#     (200/input$map_zoom)^2,
+#     row.names(pts),
+#     #       lapply(brewer.pal(5, "YlOrRd"), function(x) {
+#     #         list(color = x)
+#     #       })
+#     list(fill=TRUE, fillOpacity=1, stroke=F, fillColor=pts$col)
+#   )
+# })
+  
+
+##### Rmaps Map ######
+
+  output$rmap <- renderUI({
+    
+    #pts <- pointsInBounds()
+    #print(dim(pts))
+    ce$col <- brewer.pal(5, "YlOrRd")[as.numeric(cut(ce$coastal_exposure, breaks=5))]
+    
+    map1 <- Leaflet$new()
+    map1$setView(c(49.0, -124.15), 7)
+    map1$tileLayer('http://otile1.mqcdn.com/tiles/1.0.0/sat/{z}/{x}/{y}.jpg')
+    map1$addAssets(jshead = "https://github.com/turban/Leaflet.Sync/blob/master/L.Map.Sync.js")
+    map1$circle(c(49, -124.15), 500)
+#       4,
+#       row.names(ce),
+#       #       lapply(brewer.pal(5, "YlOrRd"), function(x) {
+#       #         list(color = x)
+#       #       })
+#       list(fill=TRUE, fillOpacity=1, stroke=F, fillColor=ce$col)
+#       )
+    #leafletLib <- file.path(find.package("rCharts"), "libraries", "leaflet")
+    HTML(map1$html(chartId = "rmap"))
+  })
+
+##### Other Tabs ####
+  
+
 
 #   riskycols <- c("red", "blue", "yellow")
 #   names(riskycols) <- c("HIGH", "LOW", "MED")
@@ -103,14 +169,6 @@ shinyServer(function(input, output, session) {
   print("make basemap")
   ## Get parameters for map window from AOI
     
-#   output$vulnmap <- renderPlot({
-#     ggbase <- get_map(location=locale, maptype="terrain", color="color", source="google", zoom=input$zoom)
-#     ce$mapvar <- ce[[input$mapvar]]
-#     gg.layer <- ggmap(ggbase) +
-#       geom_point(data=ce, aes(x=lon, y=lat, color=cut(mapvar, 5))) +
-#       scale_color_brewer(palette="YlOrRd", type="qual")
-#     print(gg.layer)
-#   })
 
 #   output$hist <- renderPlot({  
 #     ## Make y variable take user input
