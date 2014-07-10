@@ -2,61 +2,60 @@ library(shiny)
 library(leaflet)
 library(rCharts)
 
-ce <- read.csv("outputs/coastal_exposure/coastal_exposure.csv", header=T)
+#ce <- read.csv("outputs/coastal_exposure/coastal_exposure.csv", header=T)
+centermap <- c(mean(ce$lat), mean(ce$lon))
+
 # Define UI 
 shinyUI(fluidPage(
   
   navbarPage("Coastal Vulnerability Results",
              
-             tabPanel("Maps", 
-                      
-                      fluidRow(
-                        # 
-                        column(6,
-                               selectInput("var", label="Variable", choices=names(ce), selected=names(ce)[12]),
-                               
+#              tabPanel("Maps", 
+#                       
+#                       fluidRow(
+#                         # 
+#                         column(6,
+#                                selectInput("Rmapvar", label="Variable", choices=names(ce), selected=names(ce)[12]),
+#                                
+# #                                leafletMap(
+# #                                  "map", "100%", 400,
+# #                                  initialTileLayer = 'http://otile1.mqcdn.com/tiles/1.0.0/sat/{z}/{x}/{y}.jpg',
+# #                                  initialTileLayerAttribution = HTML('OSM & Mapquest'),
+# #                                  options=list(
+# #                                    center = c(49.0, -124.15),
+# #                                    zoom = 7,
+# #                                    maxBounds = list(list(17, -180), list(59, 180))
+# #                                  )
+# #                                )
+#                                wellPanel("Interactive", tags$style('.leaflet {height: 1000px;}'),
+#                                         mapOutput('mapcontainer'))
+#                                         #leafletOutput("leaf"))
+#                         ),
+#                         
+#                         column(6,
 #                                leafletMap(
-#                                  "map", "100%", 400,
+#                                  "map2", "100%", 400,
 #                                  initialTileLayer = 'http://otile1.mqcdn.com/tiles/1.0.0/sat/{z}/{x}/{y}.jpg',
 #                                  initialTileLayerAttribution = HTML('OSM & Mapquest'),
 #                                  options=list(
-#                                    center = c(49.0, -124.15),
+#                                    center = c(mean(ce$lat), mean(ce$lon)),
 #                                    zoom = 7,
 #                                    maxBounds = list(list(17, -180), list(59, 180))
 #                                  )
 #                                )
-                               wellPanel("Interactive", tags$style('.leaflet {height: 1000px;}'),
-                                        showOutput('rmap', 'leaflet'))
-                                        #leafletOutput("leaf"))
-                        ),
-                        
-                        column(6,
-                               leafletMap(
-                                 "map2", "100%", 400,
-                                 initialTileLayer = 'http://otile1.mqcdn.com/tiles/1.0.0/sat/{z}/{x}/{y}.jpg',
-                                 initialTileLayerAttribution = HTML('OSM & Mapquest'),
-                                 options=list(
-                                   center = c(49.0, -124.15),
-                                   zoom = 7,
-                                   maxBounds = list(list(17, -180), list(59, 180))
-                                 )
-                               )
-                        )
-                      )
-             ),
+#                         )
+#                       )
+#              ),
              
-             tabPanel("Plots", 
-                      
+             tabPanel("Plots",
                       fluidRow(
-                        # 
                         column(6,
-                               
                                leafletMap(
                                  "map", "100%", 400,
                                  initialTileLayer = 'http://otile1.mqcdn.com/tiles/1.0.0/sat/{z}/{x}/{y}.jpg',
                                  initialTileLayerAttribution = HTML('OSM & Mapquest'),
                                  options=list(
-                                   center = c(49.0, -124.95),
+                                   center = centermap,
                                    zoom = 8,
                                    maxBounds = list(list(17, -180), list(59, 180))
                                  )
@@ -94,9 +93,7 @@ shinyUI(fluidPage(
         habitat type and its risk classification"),
                       br(),
                       h3("About Tables"),
-                      p("The Tables tab displays the data which the maps and graphs visualize. 
-        Area calculations are based on the shapefile habitat polygons
-        and the Area of Interest shapefile"),
+                      p("The Tables tab displays the data which the maps and graphs visualize."),
                       br(),
                       h3("About this application"),
                       p("This web application reads workspace for your recent InVEST run, 

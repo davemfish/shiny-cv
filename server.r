@@ -12,6 +12,8 @@ library(gridExtra)
 library(reshape2)
 library(leaflet)
 #library(plotGoogleMaps)
+library(rCharts)
+library(xtable)
 
 ### ggplot theme ####
 th.bar <- theme(panel.background = element_rect(fill="white"), 
@@ -37,16 +39,6 @@ shinyServer(function(input, output, session) {
   blanks <- which(logfile=="")
   logfile <- logfile[1:(min(blanks) - 1)]
   
-  ce <- read.csv("outputs/coastal_exposure/coastal_exposure.csv", header=T)
-  
-  aoi <- readOGR(dsn="intermediate/00_preprocessing", layer="hdr_reprojected_aoi")
-  
-  aoi.wgs84 <- spTransform(aoi, CRS("+proj=longlat +datum=WGS84 +no_defs"))
-  points.wgs84 <- rgdal::project(as.matrix(ce[,1:2]), proj=projection(aoi), inv=T)
-  
-  ce <- cbind(ce, points.wgs84)
-  names(ce)[17:18] <- c("lon", "lat")
-  
   ##### Leaflet-Shiny Map ######
   
   map <- createLeafletMap(session, 'map')
@@ -64,10 +56,10 @@ shinyServer(function(input, output, session) {
              lon >= lngRng[1] & lon <= lngRng[2])
   })
   
-  ## Color assignment should NOT be dynamic with zoom and subsetting of points.
+  ## use the selected input variable to apply a color pallette
   getCol <- reactive({
     cols <- brewer.pal(5, "YlOrRd")[as.numeric(cut(ce[[input$mapvar]], breaks=5))]
-    print(head(cols))
+    #print(head(cols))
     return(cols)
   })
 
@@ -80,7 +72,7 @@ shinyServer(function(input, output, session) {
     map$addCircle(
       ce$lat,
       ce$lon,
-      (200/input$map_zoom)^2,
+      (1.5*input$map_zoom)^2,
       row.names(ce),
 #       lapply(brewer.pal(5, "YlOrRd"), function(x) {
 #         list(color = x)
@@ -88,6 +80,22 @@ shinyServer(function(input, output, session) {
       list(fill=TRUE, fillOpacity=1, stroke=F, fillColor=ce$col)
     )
   })
+
+observe({
+  event <- input$map_shape_click
+  if (is.null(event))
+    return()
+  map$clearPopups()
+  
+  isolate({
+    #cities <- topCitiesInBounds()
+    coast <- ce[row.names(ce) == event$id,]
+    selectedcoast <<- coast
+    content <- print.xtable(xtable(t(coast[5:18])), type="html")
+    map$showPopup(event$lat, event$lng, content, event$id)
+  })
+})
+
 
 output$hist <- renderPlot({
   pts <- pointsInBounds()
@@ -134,29 +142,49 @@ output$hist <- renderPlot({
 # })
   
 
-##### Rmaps Map ######
-
-  output$rmap <- renderUI({
-    
-    #pts <- pointsInBounds()
-    #print(dim(pts))
-    ce$col <- brewer.pal(5, "YlOrRd")[as.numeric(cut(ce$coastal_exposure, breaks=5))]
-    
-    map1 <- Leaflet$new()
-    map1$setView(c(49.0, -124.15), 7)
-    map1$tileLayer('http://otile1.mqcdn.com/tiles/1.0.0/sat/{z}/{x}/{y}.jpg')
-    map1$addAssets(jshead = "https://github.com/turban/Leaflet.Sync/blob/master/L.Map.Sync.js")
-    map1$circle(c(49, -124.15), 500)
-#       4,
-#       row.names(ce),
-#       #       lapply(brewer.pal(5, "YlOrRd"), function(x) {
-#       #         list(color = x)
-#       #       })
-#       list(fill=TRUE, fillOpacity=1, stroke=F, fillColor=ce$col)
-#       )
-    #leafletLib <- file.path(find.package("rCharts"), "libraries", "leaflet")
-    HTML(map1$html(chartId = "rmap"))
-  })
+# ##### Rmaps Map ######
+# 
+# getCol <- reactive({
+#   cols <- brewer.pal(5, "YlOrRd")[as.numeric(cut(ce[[input$Rmapvar]], breaks=5))]
+#   print(head(cols))
+#   return(cols)
+# })
+# 
+#   plotMap <- function(){
+#     ce$fillColor <- getCol()
+#     
+#     map1 <- Leaflet$new()
+#     map1$set(width=400, height=400)
+#     map1$setView(c(mean(ce$lat), mean(ce$lon)), 7)
+#     map1$tileLayer('http://otile1.mqcdn.com/tiles/1.0.0/sat/{z}/{x}/{y}.jpg')
+#     map1$addAssets(jshead = "https://github.com/turban/Leaflet.Sync/blob/master/L.Map.Sync.js")
+#     map1$geoJson(toGeoJSON(ce, lat.lon=c("lat","lon")),
+#       pointToLayer =  "#! function(feature, latlng){
+#       return L.circleMarker(latlng, {
+#         radius: 4,
+#         fillColor: feature.properties.fillColor || 'blue',    
+#         color: '#000',
+#         weight: 1,
+#         fillOpacity: 0.8
+#       })
+#     } !#")
+#     return(map1)
+#     #map1$circle(c(49, -124.15), 500)
+#     #       4,
+#     #       row.names(ce),
+#     #       #       lapply(brewer.pal(5, "YlOrRd"), function(x) {
+#     #       #         list(color = x)
+#     #       #       })
+#     #       list(fill=TRUE, fillOpacity=1, stroke=F, fillColor=ce$col)
+#     #       )
+#     #leafletLib <- file.path(find.package("rCharts"), "libraries", "leaflet")
+#     #HTML(map1$html(chartId = "rmap"))
+#   }
+#     
+# 
+# output$mapcontainer <- renderMap({
+#   plotMap()
+# })
 
 ##### Other Tabs ####
   
