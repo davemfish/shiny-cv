@@ -269,10 +269,10 @@ output$hist <- renderPlot({
     content = function(file) {write.csv(loadCSV(), file)}
   )
 
-  output$config <- renderTable({
-    print(list.files(path=input$InVEST, pattern=glob2rx("coastal_vulnerability-log*.txt")))
-    
+  output$config <- renderTable({    
     matrix(loadLOG())
   })
-  
+  output$directory <- renderText({    
+    tail(unlist(strsplit(tail(loadLOG(), 1), split=" ")), 1)
+  })
 })

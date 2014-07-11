@@ -20,6 +20,7 @@ shinyUI(fluidPage(
                                      ),
                         mainPanel(
                                   h3("Current InVEST Configuration"),
+                                  h4(textOutput("directory")),
                                   tableOutput("config"),
                                   p("This is information from the logfile produced by the InVEST model run")
 
