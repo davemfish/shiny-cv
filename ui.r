@@ -1,52 +1,30 @@
 library(shiny)
 library(leaflet)
 library(rCharts)
+library(xtable)
 
 #ce <- read.csv("outputs/coastal_exposure/coastal_exposure.csv", header=T)
-centermap <- c(mean(ce$lat), mean(ce$lon))
+#centermap <- c(mean(ce$lat), mean(ce$lon))
 
 # Define UI 
 shinyUI(fluidPage(
   
   navbarPage("Coastal Vulnerability Results",
              
-#              tabPanel("Maps", 
-#                       
-#                       fluidRow(
-#                         # 
-#                         column(6,
-#                                selectInput("Rmapvar", label="Variable", choices=names(ce), selected=names(ce)[12]),
-#                                
-# #                                leafletMap(
-# #                                  "map", "100%", 400,
-# #                                  initialTileLayer = 'http://otile1.mqcdn.com/tiles/1.0.0/sat/{z}/{x}/{y}.jpg',
-# #                                  initialTileLayerAttribution = HTML('OSM & Mapquest'),
-# #                                  options=list(
-# #                                    center = c(49.0, -124.15),
-# #                                    zoom = 7,
-# #                                    maxBounds = list(list(17, -180), list(59, 180))
-# #                                  )
-# #                                )
-#                                wellPanel("Interactive", tags$style('.leaflet {height: 1000px;}'),
-#                                         mapOutput('mapcontainer'))
-#                                         #leafletOutput("leaf"))
-#                         ),
-#                         
-#                         column(6,
-#                                leafletMap(
-#                                  "map2", "100%", 400,
-#                                  initialTileLayer = 'http://otile1.mqcdn.com/tiles/1.0.0/sat/{z}/{x}/{y}.jpg',
-#                                  initialTileLayerAttribution = HTML('OSM & Mapquest'),
-#                                  options=list(
-#                                    center = c(mean(ce$lat), mean(ce$lon)),
-#                                    zoom = 7,
-#                                    maxBounds = list(list(17, -180), list(59, 180))
-#                                  )
-#                                )
-#                         )
-#                       )
-#              ),
-             
+             tabPanel("Get Started",
+                      sidebarLayout(
+                        sidebarPanel("sidebar",
+                                     textInput("path", "File:"),
+                                     actionButton("setup", "Browse"),
+                                     tags$br(),
+                                     actionButton("upload", "Upload Data")
+                                     ),
+                        mainPanel("main"
+                                  
+                        )
+                        )
+                      ),
+                          
              tabPanel("Plots",
                       fluidRow(
                         column(6,
@@ -60,7 +38,7 @@ shinyUI(fluidPage(
                                    maxBounds = list(list(17, -180), list(59, 180))
                                  )
                                ),
-                               selectInput("mapvar", label="Variable", choices=names(ce), selected=names(ce)[12])
+                               selectInput("mapvar", label="Variable", choices=names(ce), selected=names(ce)[2])
                         ),
                         
                         column(6,

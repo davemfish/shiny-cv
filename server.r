@@ -15,6 +15,8 @@ library(leaflet)
 library(rCharts)
 library(xtable)
 
+
+
 ### ggplot theme ####
 th.bar <- theme(panel.background = element_rect(fill="white"), 
                 axis.text.y=element_text(size=12),
@@ -35,9 +37,41 @@ print("start function")
 
 shinyServer(function(input, output, session) {
   
-  logfile <- readLines(con=list.files(pattern=glob2rx("coastal_vulnerability-log*.txt")), n=-1)
-  blanks <- which(logfile=="")
-  logfile <- logfile[1:(min(blanks) - 1)]
+  observe({
+    
+    if (input$setup == 0) return()
+    
+    updateTextInput(session, "path",  value = choose.dir())
+  })
+  
+  contentInput <- reactive({ 
+    
+    if(input$upload == 0) return()
+    
+    isolate({
+      writeLines(paste(readLines(input$path), collapse = "\n"))
+    })
+  })
+  
+  output$workspace <- renderPrint({
+    normalizePath(contentInput(), winslash="/")
+  })
+  
+  observe({ input$setup
+            dir <- input$path
+            ce <- read.csv(file.path(dir, "outputs/coastal_exposure/coastal_exposure.csv"), header=T)
+            aoi <- readOGR(dsn=file.path(dir, "intermediate/00_preprocessing"), layer="hdr_reprojected_aoi")
+            
+            aoi.wgs84 <- spTransform(aoi, CRS("+proj=longlat +datum=WGS84 +no_defs"))
+            points.wgs84 <- rgdal::project(as.matrix(ce[,1:2]), proj=projection(aoi), inv=T)
+            
+            ce <- cbind(ce, points.wgs84)
+            names(ce)[17:18] <- c("lon", "lat")
+            })
+  
+  #logfile <- readLines(con=list.files(pattern=glob2rx("coastal_vulnerability-log*.txt")), n=-1)
+  #blanks <- which(log=="")
+  #log <- log[1:(min(blanks) - 1)]
   
   ##### Leaflet-Shiny Map ######
   
@@ -90,7 +124,7 @@ observe({
   isolate({
     #cities <- topCitiesInBounds()
     coast <- ce[row.names(ce) == event$id,]
-    selectedcoast <<- coast
+    #selectedcoast <<- coast
     content <- print.xtable(xtable(t(coast[5:18])), type="html")
     map$showPopup(event$lat, event$lng, content, event$id)
   })
