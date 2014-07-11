@@ -37,41 +37,43 @@ print("start function")
 
 shinyServer(function(input, output, session) {
   
+  loadCSV <- reactive ({ #input$setup
+    
+    validate(
+      need(input$InVEST != "", "Please select an InVEST workspace")
+    )
+    
+    ws <- input$InVEST
+    ce <- read.csv(file.path(ws, "outputs/coastal_exposure/coastal_exposure.csv"), header=T)
+    aoi <- readOGR(dsn=file.path(ws, "intermediate/00_preprocessing"), layer="hdr_reprojected_aoi")
+    
+    aoi.wgs84 <- spTransform(aoi, CRS("+proj=longlat +datum=WGS84 +no_defs"))
+    points.wgs84 <- rgdal::project(as.matrix(ce[,1:2]), proj=projection(aoi), inv=T)
+    
+    ce <- cbind(ce, points.wgs84)
+    names(ce)[17:18] <- c("lon", "lat")
+    return(ce)
+  })
+  
+  loadLOG <- reactive({
+    validate(
+      need(input$InVEST != "", "Please select an InVEST workspace")
+    )
+    ws <- input$InVEST
+    logfile <- readLines(con=file.path(ws, list.files(path=ws, pattern=glob2rx("coastal_vulnerability-log*.txt"))), n=-1)
+    blanks <- which(logfile=="")
+    log <- logfile[1:(min(blanks) - 1)]
+    return(log)
+  })
+  
   observe({
-    
-    if (input$setup == 0) return()
-    
-    updateTextInput(session, "path",  value = choose.dir())
+    ce <- loadCSV()
+    updateSelectInput(session, "mapvar",
+                            label = "Map Layer",
+                            choices = names(ce),
+                            selected = names(ce)[12]
+                          )
   })
-  
-  contentInput <- reactive({ 
-    
-    if(input$upload == 0) return()
-    
-    isolate({
-      writeLines(paste(readLines(input$path), collapse = "\n"))
-    })
-  })
-  
-  output$workspace <- renderPrint({
-    normalizePath(contentInput(), winslash="/")
-  })
-  
-  observe({ input$setup
-            dir <- input$path
-            ce <- read.csv(file.path(dir, "outputs/coastal_exposure/coastal_exposure.csv"), header=T)
-            aoi <- readOGR(dsn=file.path(dir, "intermediate/00_preprocessing"), layer="hdr_reprojected_aoi")
-            
-            aoi.wgs84 <- spTransform(aoi, CRS("+proj=longlat +datum=WGS84 +no_defs"))
-            points.wgs84 <- rgdal::project(as.matrix(ce[,1:2]), proj=projection(aoi), inv=T)
-            
-            ce <- cbind(ce, points.wgs84)
-            names(ce)[17:18] <- c("lon", "lat")
-            })
-  
-  #logfile <- readLines(con=list.files(pattern=glob2rx("coastal_vulnerability-log*.txt")), n=-1)
-  #blanks <- which(log=="")
-  #log <- log[1:(min(blanks) - 1)]
   
   ##### Leaflet-Shiny Map ######
   
@@ -79,19 +81,26 @@ shinyServer(function(input, output, session) {
   #map2 <- map
   
   pointsInBounds <- reactive({
+    validate(
+      need(input$InVEST != "", "Please select an InVEST workspace")
+    )
    if (is.null(input$map_bounds))
-     return(ce)
+     return(loadCSV())
     bounds <- input$map_bounds
     latRng <- range(bounds$north, bounds$south)
     lngRng <- range(bounds$east, bounds$west)
     
-    subset(ce,
+    subset(loadCSV(),
            lat >= latRng[1] & lat <= latRng[2] &
              lon >= lngRng[1] & lon <= lngRng[2])
   })
   
   ## use the selected input variable to apply a color pallette
   getCol <- reactive({
+    validate(
+      need(input$InVEST != "", "Please select a map layer")
+    )
+    ce <- loadCSV()
     cols <- brewer.pal(5, "YlOrRd")[as.numeric(cut(ce[[input$mapvar]], breaks=5))]
     #print(head(cols))
     return(cols)
@@ -99,6 +108,10 @@ shinyServer(function(input, output, session) {
 
 
   observe({
+    validate(
+      need(input$InVEST != "", "Please select an InVEST workspace")
+    )
+    ce <- loadCSV()
     ce$col <- getCol()
     #print(head(ce$col))
     #pts <- pointsInBounds()
@@ -116,12 +129,16 @@ shinyServer(function(input, output, session) {
   })
 
 observe({
+  validate(
+    need(input$InVEST != "", "Please select an InVEST workspace")
+  )
   event <- input$map_shape_click
   if (is.null(event))
     return()
   map$clearPopups()
   
   isolate({
+    ce <- loadCSV()
     #cities <- topCitiesInBounds()
     coast <- ce[row.names(ce) == event$id,]
     #selectedcoast <<- coast
@@ -143,6 +160,7 @@ output$hist <- renderPlot({
   print(gg.hist)
 })
 
+##### GGmaps #######
 #   locale <- matrix(NA, nrow=2, ncol=2, dimnames=list(c("x", "y"), c("min", "max")))
 #   locale[1,1] <- min(ce$lon)
 #   locale[1,2] <- max(ce$lon)
@@ -243,16 +261,18 @@ output$hist <- renderPlot({
 #   })
   
   output$vulnerability <- renderDataTable({ 
-    print(ce)
+    print(loadCSV())
   })
 
   output$downloadCSV <- downloadHandler(
     filename = paste('data-', '.csv', sep=''),
-    content = function(file) {write.csv(ce, file)}
+    content = function(file) {write.csv(loadCSV(), file)}
   )
 
-  output$config <- renderTable({ 
-    matrix(logfile)
+  output$config <- renderTable({
+    print(list.files(path=input$InVEST, pattern=glob2rx("coastal_vulnerability-log*.txt")))
+    
+    matrix(loadLOG())
   })
   
 })

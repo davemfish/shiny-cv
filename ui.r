@@ -13,14 +13,16 @@ shinyUI(fluidPage(
              
              tabPanel("Get Started",
                       sidebarLayout(
-                        sidebarPanel("sidebar",
-                                     textInput("path", "File:"),
-                                     actionButton("setup", "Browse"),
-                                     tags$br(),
-                                     actionButton("upload", "Upload Data")
+                        sidebarPanel(
+                                     selectInput("InVEST", label="InVEST workspace", choices=getdir(), selected=NULL),
+                                     tags$br()
+                                     #actionButton("upload", "Upload Data")
                                      ),
-                        mainPanel("main"
-                                  
+                        mainPanel(
+                                  h3("Current InVEST Configuration"),
+                                  tableOutput("config"),
+                                  p("This is information from the logfile produced by the InVEST model run")
+
                         )
                         )
                       ),
@@ -33,12 +35,12 @@ shinyUI(fluidPage(
                                  initialTileLayer = 'http://otile1.mqcdn.com/tiles/1.0.0/sat/{z}/{x}/{y}.jpg',
                                  initialTileLayerAttribution = HTML('OSM & Mapquest'),
                                  options=list(
-                                   center = centermap,
+                                   center = c(49.5, -125.3),
                                    zoom = 8,
                                    maxBounds = list(list(17, -180), list(59, 180))
                                  )
                                ),
-                               selectInput("mapvar", label="Variable", choices=names(ce), selected=names(ce)[2])
+                               selectInput("mapvar", label="Map Layer", choices=NULL, selected=NULL)
                         ),
                         
                         column(6,
@@ -62,10 +64,7 @@ shinyUI(fluidPage(
                       )
              ),
              tabPanel("Help/About",
-                      h3("Current InVEST Configuration"),
-                      tableOutput("config"),
-                      p("This is information from the logfile produced by the InVEST model run"),
-                      br(),
+                      
                       h3("About Plots"),
                       p("The Plots tab contains maps and graphs summarizing the area of each
         habitat type and its risk classification"),

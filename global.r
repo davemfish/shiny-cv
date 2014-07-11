@@ -15,15 +15,11 @@
 library(rgdal)
 library(raster)
 
-# chooseDir <- reactive({ event <- input$setwd
-#                        if (event == 0)
-#                          return()
-#                        dir <- choose.dir()
-#                        return(dir) 
-#                        })
-# 
-
-#workspace <- chooseDir()
+getdir <- function(){
+  fs <- dir()
+  ds <- fs[which(file_test("-d", fs))]
+  return(ds)
+}
 
 # ce <- read.csv(file.path("outputs/coastal_exposure/coastal_exposure.csv"), header=T)
 # aoi <- readOGR(dsn=file.path("intermediate/00_preprocessing"), layer="hdr_reprojected_aoi")
