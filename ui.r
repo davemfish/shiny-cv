@@ -7,7 +7,7 @@ library(xtable)
 #centermap <- c(mean(ce$lat), mean(ce$lon))
 
 # Define UI 
-shinyUI(fluidPage(
+shinyUI(#fluidPage(
   
   navbarPage("Coastal Vulnerability Results",
              
@@ -31,6 +31,7 @@ shinyUI(fluidPage(
              tabPanel("Plots",
                       fluidRow(
                         column(6,
+                               selectInput("mapvar", label="Map Layer", choices=NULL),
                                leafletMap(
                                  "map", "100%", 400,
                                  initialTileLayer = 'http://otile1.mqcdn.com/tiles/1.0.0/sat/{z}/{x}/{y}.jpg',
@@ -40,11 +41,12 @@ shinyUI(fluidPage(
                                    zoom = 8,
                                    maxBounds = list(list(17, -180), list(59, 180))
                                  )
-                               ),
-                               selectInput("mapvar", label="Map Layer", choices=NULL)
+                               )
                         ),
                         
                         column(6,
+                               h5("The histograms display only the points within the current map view"),
+                               br(),
                                plotOutput("hist")
                         )
                       )
@@ -78,4 +80,4 @@ shinyUI(fluidPage(
 loads datasets from the output folder, and performs some calculations with R.
 This app is built with the Shiny package for R.")
              )             
-  )))
+  ))#)

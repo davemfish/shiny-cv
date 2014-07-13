@@ -107,7 +107,6 @@ shinyServer(function(input, output, session) {
   ##### Leaflet-Shiny Map ######
   
   map <- createLeafletMap(session, 'map')
-  #map2 <- map
   
   pointsInBounds <- reactive({
     validate(
@@ -158,7 +157,7 @@ shinyServer(function(input, output, session) {
     map$addCircle(
       ce$lat,
       ce$lon,
-      (1.5*input$map_zoom)^2,
+      (6*input$map_zoom)^1.3,
       row.names(ce),
 #       lapply(brewer.pal(5, "YlOrRd"), function(x) {
 #         list(color = x)
@@ -166,6 +165,7 @@ shinyServer(function(input, output, session) {
       list(fill=TRUE, fillOpacity=1, stroke=F, fillColor=ce$col)
     )
   })
+
 
 observe({
 #   validate(
