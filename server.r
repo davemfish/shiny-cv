@@ -38,11 +38,12 @@ print("start function")
 shinyServer(function(input, output, session) {
   
   loadCSV <- reactive ({ #input$setup
-    
-    validate(
-      need(input$InVEST != "", "Please select an InVEST workspace")
-    )
-    
+    if (input$upload == 0)
+      return(NULL)
+#     validate(
+#       need(input$InVEST != "", "Please select an InVEST workspace")
+#     )
+    isolate({
     ws <- input$InVEST
     ce <- read.csv(file.path(ws, "outputs/coastal_exposure/coastal_exposure.csv"), header=T)
     aoi <- readOGR(dsn=file.path(ws, "intermediate/00_preprocessing"), layer="hdr_reprojected_aoi")
@@ -52,27 +53,55 @@ shinyServer(function(input, output, session) {
     
     ce <- cbind(ce, points.wgs84)
     names(ce)[17:18] <- c("lon", "lat")
+    print("loaded csv")
     return(ce)
+    })
   })
   
   loadLOG <- reactive({
-    validate(
-      need(input$InVEST != "", "Please select an InVEST workspace")
-    )
-    ws <- input$InVEST
-    logfile <- readLines(con=file.path(ws, list.files(path=ws, pattern=glob2rx("coastal_vulnerability-log*.txt"))), n=-1)
-    blanks <- which(logfile=="")
-    log <- logfile[1:(min(blanks) - 1)]
-    return(log)
+    if (input$upload == 0)
+      return(NULL)
+#     validate(
+#       need(input$InVEST != "", "Please select an InVEST workspace")
+#     )
+
+    #isolate({
+      #input$upload
+      ws <- input$InVEST
+      logfile <- readLines(con=file.path(ws, list.files(path=ws, pattern=glob2rx("coastal_vulnerability-log*.txt"))), n=-1)
+      blanks <- which(logfile=="")
+      log <- logfile[1:(min(blanks) - 1)]
+      print("loaded log")
+      return(log)
+    #})
+    
+  })
+  
+  output$config <- renderTable({
+    if (input$upload == 0)
+      return(NULL)
+    isolate({ matrix(loadLOG()) })
+  })
+  output$directory <- renderText({
+    if (input$upload == 0)
+      return(NULL)
+    isolate({
+      tail(unlist(strsplit(tail(loadLOG(), 1), split=" ")), 1)
+    })
   })
   
   observe({
-    ce <- loadCSV()
-    updateSelectInput(session, "mapvar",
+    if (input$upload == 0)
+      return(NULL)
+    isolate({
+      print("updating select")
+      ce <- loadCSV()
+      updateSelectInput(session, "mapvar",
                             label = "Map Layer",
                             choices = names(ce),
                             selected = names(ce)[12]
                           )
+    })
   })
   
   ##### Leaflet-Shiny Map ######
@@ -97,20 +126,30 @@ shinyServer(function(input, output, session) {
   
   ## use the selected input variable to apply a color pallette
   getCol <- reactive({
-    validate(
-      need(input$InVEST != "", "Please select a map layer")
-    )
-    ce <- loadCSV()
-    cols <- brewer.pal(5, "YlOrRd")[as.numeric(cut(ce[[input$mapvar]], breaks=5))]
-    #print(head(cols))
-    return(cols)
+    if (input$upload == 0)
+      return(NULL)
+    if (input$mapvar == "")
+      return(NULL)
+#     validate(
+#       need(!is.null(input$mapvar), "Please select a map layer")
+#     )
+    #isolate({
+      ce <- loadCSV()
+      print(class(ce))
+      print(input$mapvar)
+      cols <- brewer.pal(5, "YlOrRd")[as.numeric(cut(ce[[input$mapvar]], breaks=5))]
+      #print(head(cols))
+      return(cols)
+    #})
   })
 
 
   observe({
-    validate(
-      need(input$InVEST != "", "Please select an InVEST workspace")
-    )
+    if (input$upload == 0)
+      return(NULL)
+#     validate(
+#       need(input$mapvar != "", "Please select a map layer")
+#     )
     ce <- loadCSV()
     ce$col <- getCol()
     #print(head(ce$col))
@@ -129,9 +168,12 @@ shinyServer(function(input, output, session) {
   })
 
 observe({
-  validate(
-    need(input$InVEST != "", "Please select an InVEST workspace")
-  )
+#   validate(
+#     need(input$mapvar != "", "Please select a map layer")
+#   )
+  if (input$upload == 0)
+    return(NULL)
+  
   event <- input$map_shape_click
   if (is.null(event))
     return()
@@ -246,7 +288,6 @@ output$hist <- renderPlot({
 #   names(riskycols) <- c("HIGH", "LOW", "MED")
   
   
-  print("make basemap")
   ## Get parameters for map window from AOI
     
 
@@ -269,10 +310,4 @@ output$hist <- renderPlot({
     content = function(file) {write.csv(loadCSV(), file)}
   )
 
-  output$config <- renderTable({    
-    matrix(loadLOG())
-  })
-  output$directory <- renderText({    
-    tail(unlist(strsplit(tail(loadLOG(), 1), split=" ")), 1)
-  })
 })

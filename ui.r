@@ -14,9 +14,9 @@ shinyUI(fluidPage(
              tabPanel("Get Started",
                       sidebarLayout(
                         sidebarPanel(
-                                     selectInput("InVEST", label="InVEST workspace", choices=getdir(), selected=NULL),
-                                     tags$br()
-                                     #actionButton("upload", "Upload Data")
+                                     selectInput("InVEST", label="Choose InVEST workspace", choices=getdir(), selected=NULL),
+                                     tags$br(),
+                                     actionButton("upload", "Upload Results")
                                      ),
                         mainPanel(
                                   h3("Current InVEST Configuration"),
@@ -41,7 +41,7 @@ shinyUI(fluidPage(
                                    maxBounds = list(list(17, -180), list(59, 180))
                                  )
                                ),
-                               selectInput("mapvar", label="Map Layer", choices=NULL, selected=NULL)
+                               selectInput("mapvar", label="Map Layer", choices=NULL)
                         ),
                         
                         column(6,
