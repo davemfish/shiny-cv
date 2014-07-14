@@ -23,14 +23,16 @@ th.bar <- theme(panel.background = element_rect(fill="white"),
                 axis.text.x=element_text(size=12),
                 #axis.title.x=element_blank(),
                 #axis.title.y=element_blank(),
-                #panel.border = element_rect(color="black", fill=NA), 
+                #strip.text=element_blank(), 
+                strip.background=element_blank(), 
+                panel.border = element_rect(color="black", fill=NA), 
                 #panel.grid.minor.x=element_line(size=.2, color="gray", linetype="dashed"), 
                 panel.grid.major.y=element_line(size=.4, color="gray", linetype="dashed"),
                 panel.grid.minor.y=element_blank(),
                 panel.grid.minor.x=element_blank(),
                 panel.grid.major.x=element_blank(),
                 #legend.text=element_blank(),
-                legend.position="left")
+                legend.position="none")
 
 print("start function")
 ###### Server Function ##############
@@ -195,9 +197,10 @@ output$hist <- renderPlot({
   pts <- pts[,5:13]
   plotpts <- melt(pts)
   gg.hist <- ggplot(plotpts) + 
-    geom_bar(aes(x=value), width=.4) +
+    geom_bar(aes(x=value, fill=cut(value, 5)), binwidth=.5) +
     facet_wrap("variable", nrow=3, ncol=3) +
-    #scale_fill_manual(name="RISK", values=riskycols) +
+    scale_fill_brewer(palette="YlOrRd", type="qual") +
+    xlim(0,5) +
     th.bar
   print(gg.hist)
 })
