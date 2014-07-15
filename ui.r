@@ -21,8 +21,8 @@ shinyUI(#fluidPage(
                         mainPanel(
                                   h3("Current InVEST Configuration"),
                                   h4(textOutput("directory")),
-                                  tableOutput("config"),
-                                  p("This is information from the logfile produced by the InVEST model run")
+                                  tableOutput("config")
+                                  #p("This is information from the logfile produced by the InVEST model run")
 
                         )
                         )
@@ -37,9 +37,9 @@ shinyUI(#fluidPage(
                                  initialTileLayer = 'http://otile1.mqcdn.com/tiles/1.0.0/sat/{z}/{x}/{y}.jpg',
                                  initialTileLayerAttribution = HTML('OSM & Mapquest'),
                                  options=list(
-                                   center = c(49.5, -125.3),
+                                   center = c(49.25, -125.8),
                                    zoom = 8,
-                                   maxBounds = list(list(17, -180), list(59, 180))
+                                   maxBounds = list(list(-90, -180), list(90, 180))
                                  )
                                )
                         ),

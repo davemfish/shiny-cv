@@ -21,9 +21,9 @@ library(xtable)
 th.bar <- theme(panel.background = element_rect(fill="white"), 
                 axis.text.y=element_text(size=12),
                 axis.text.x=element_text(size=12),
-                #axis.title.x=element_blank(),
-                #axis.title.y=element_blank(),
-                #strip.text=element_blank(), 
+                axis.title.x=element_text(size=14),
+                axis.title.y=element_text(size=14),
+                strip.text=element_text(size=11), 
                 strip.background=element_blank(), 
                 panel.border = element_rect(color="black", fill=NA), 
                 #panel.grid.minor.x=element_line(size=.2, color="gray", linetype="dashed"), 
@@ -53,8 +53,8 @@ shinyServer(function(input, output, session) {
     aoi.wgs84 <- spTransform(aoi, CRS("+proj=longlat +datum=WGS84 +no_defs"))
     points.wgs84 <- rgdal::project(as.matrix(ce[,1:2]), proj=projection(aoi), inv=T)
     
-    ce <- cbind(ce, points.wgs84)
-    names(ce)[17:18] <- c("lon", "lat")
+    ce <- cbind(points.wgs84, ce)
+    names(ce)[1:2] <- c("lon", "lat")
     print("loaded csv")
     return(ce)
     })
@@ -74,6 +74,7 @@ shinyServer(function(input, output, session) {
       blanks <- which(logfile=="")
       log <- logfile[1:(min(blanks) - 1)]
       print("loaded log")
+      print(log[6])
       return(log)
     #})
     
@@ -91,7 +92,7 @@ shinyServer(function(input, output, session) {
       tail(unlist(strsplit(tail(loadLOG(), 1), split=" ")), 1)
     })
   })
-  
+
   observe({
     if (input$upload == 0)
       return(NULL)
@@ -101,7 +102,7 @@ shinyServer(function(input, output, session) {
       updateSelectInput(session, "mapvar",
                             label = "Map Layer",
                             choices = names(ce),
-                            selected = names(ce)[12]
+                            selected = "coastal_exposure"
                           )
     })
   })
@@ -110,6 +111,7 @@ shinyServer(function(input, output, session) {
   
   map <- createLeafletMap(session, 'map')
   
+
   pointsInBounds <- reactive({
     validate(
       need(input$InVEST != "", "Please select an InVEST workspace")
@@ -186,21 +188,38 @@ observe({
     #cities <- topCitiesInBounds()
     coast <- ce[row.names(ce) == event$id,]
     #selectedcoast <<- coast
-    content <- print.xtable(xtable(t(coast[5:18])), type="html")
+    content <- print.xtable(xtable(t(coast[c(1,2,7:ncol(coast))])), type="html")
     map$showPopup(event$lat, event$lng, content, event$id)
   })
 })
 
+# Res <- reactive({
+#   if (input$upload == 0)
+#     return(NULL)
+#   #isolate({
+#   cellsize <- loadLOG()[6]
+#   print(cellsize)
+#   resolution <- as.numeric(tail(unlist(strsplit(cellsize, split=" ")), 1))
+#   print(resolution)
+#   #return(resolution)
+#   #})
+# })
+# 
+# observe({print(Res())})
 
+
+#print(res())
 output$hist <- renderPlot({
   pts <- pointsInBounds()
-  pts <- pts[,5:13]
+  pts <- pts[,7:ncol(pts)]
   plotpts <- melt(pts)
+  #pt2km <- Res()
   gg.hist <- ggplot(plotpts) + 
-    geom_bar(aes(x=value, fill=cut(value, 5)), binwidth=.5) +
-    facet_wrap("variable", nrow=3, ncol=3) +
+    geom_bar(aes(x=value, y=..count.., fill=cut(value, 5)), binwidth=.5) +
+    facet_wrap("variable", nrow=ceiling(sqrt(ncol(pts))), ncol=ceiling(sqrt(ncol(pts)))) +
     scale_fill_brewer(palette="YlOrRd", type="qual") +
     xlim(0,5) +
+    ylab("count") +
     th.bar
   print(gg.hist)
 })
