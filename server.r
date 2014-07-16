@@ -161,7 +161,7 @@ shinyServer(function(input, output, session) {
     map$addCircle(
       ce$lat,
       ce$lon,
-      (6*input$map_zoom)^1.3,
+      1000/(input$map_zoom^1.2),
       row.names(ce),
 #       lapply(brewer.pal(5, "YlOrRd"), function(x) {
 #         list(color = x)
