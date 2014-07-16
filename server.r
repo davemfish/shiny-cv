@@ -42,15 +42,13 @@ shinyServer(function(input, output, session) {
   loadCSV <- reactive ({ #input$setup
     if (input$upload == 0)
       return(NULL)
-#     validate(
-#       need(input$InVEST != "", "Please select an InVEST workspace")
-#     )
+
     isolate({
     ws <- input$InVEST
     ce <- read.csv(file.path(ws, "outputs/coastal_exposure/coastal_exposure.csv"), header=T)
-    aoi <- readOGR(dsn=file.path(ws, "intermediate/00_preprocessing"), layer="hdr_reprojected_aoi")
+    aoi <- raster(file.path(ws, "intermediate/00_preprocessing/00_PRE_aoi.tif"))
     
-    aoi.wgs84 <- spTransform(aoi, CRS("+proj=longlat +datum=WGS84 +no_defs"))
+    #aoi.wgs84 <- spTransform(aoi, CRS("+proj=longlat +datum=WGS84 +no_defs"))
     points.wgs84 <- rgdal::project(as.matrix(ce[,1:2]), proj=projection(aoi), inv=T)
     
     ce <- cbind(points.wgs84, ce)
