@@ -39,7 +39,7 @@ print("start function")
 
 shinyServer(function(input, output, session) {
   
-  loadCSV <- reactive ({ #input$setup
+  loadCSV <- reactive ({ 
     if (input$upload == 0)
       return(NULL)
 
@@ -48,7 +48,6 @@ shinyServer(function(input, output, session) {
     ce <- read.csv(file.path(ws, "outputs/coastal_exposure/coastal_exposure.csv"), header=T)
     aoi <- raster(file.path(ws, "intermediate/00_preprocessing/00_PRE_aoi.tif"))
     
-    #aoi.wgs84 <- spTransform(aoi, CRS("+proj=longlat +datum=WGS84 +no_defs"))
     points.wgs84 <- rgdal::project(as.matrix(ce[,1:2]), proj=projection(aoi), inv=T)
     
     ce <- cbind(points.wgs84, ce)
@@ -89,6 +88,24 @@ shinyServer(function(input, output, session) {
     isolate({
       tail(unlist(strsplit(tail(loadLOG(), 1), split=" ")), 1)
     })
+  })
+
+  output$leafmap <- renderUI({
+    if (input$upload == 0)
+      return(NULL)
+    isolate({
+      ce <- loadCSV()
+    })
+    leafletMap(
+      "map", "100%", 400,
+      initialTileLayer = "https://a.tiles.mapbox.com/v3/geointerest.map-dqz2pa8r/{z}/{x}/{y}.png",
+      initialTileLayerAttribution = HTML('OSM & Mapbox'),
+      options=list(
+        center = c(mean(ce$lat), mean(ce$lon)),
+        zoom = 8,
+        maxBounds = list(list(min(ce$lat)-1, min(ce$lon)-1), list(max(ce$lat)+1, max(ce$lat)+1))
+      )
+    )
   })
 
   observe({
