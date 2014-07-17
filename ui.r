@@ -68,23 +68,24 @@ shinyUI(#fluidPage(
                         )
                       )
              ),
-#              tabPanel("Compare Scenarios",
-#                       sidebarLayout(
-#                         sidebarPanel(
-#                           selectInput("Baseline", label="Choose Baseline Results", choices=getdir(), selected=NULL),
-#                           tags$br(),
-#                           selectInput("Scenario", label="Choose Scenario Results", choices=getdir(), selected=NULL),
-#                           actionButton("Difference", "Upload Results")
-#                         ),
-#                         mainPanel(
-#                           #h3("Current InVEST Configuration"),
-#                           #h4(textOutput("directory")),
-#                           #tableOutput("config")
-#                           #p("This is information from the logfile produced by the InVEST model run")
-#                           
-#                         )
-#                       )
-#              ),
+             tabPanel("Compare Scenarios",
+                      sidebarLayout(
+                        sidebarPanel(
+                          selectInput("Baseline", label="Choose Baseline Results", choices=getdir(), selected=NULL),
+                          selectInput("Scenario", label="Choose Scenario Results", choices=getdir(), selected=NULL),
+                          actionButton("Difference", "Upload Results"),
+                          tags$br(),
+                          tags$br(),
+                          uiOutput("diffnames"),
+                          tags$br(),
+                          actionButton("diffcalc", "Calculate Differences")
+                        ),
+                        mainPanel(
+                          dataTableOutput("difftable")
+                          
+                        )
+                      )
+             ),
              tabPanel("Help/About",
                       
                       h3("About Plots"),

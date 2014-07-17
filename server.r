@@ -37,32 +37,45 @@ th.bar <- theme(panel.background = element_rect(fill="white"),
 print("start function")
 ###### Server Function ##############
 
+## This silly little function gets called inside a reactive function
+## It's a hack to get a reactive function to take an argument
+LoadSpace <- function(inputX){
+  ws <- inputX
+  ce <- read.csv(file.path(ws, "outputs/coastal_exposure/coastal_exposure.csv"), header=T)
+  aoi <- raster(file.path(ws, "intermediate/00_preprocessing/00_PRE_aoi.tif"))
+  points.wgs84 <- rgdal::project(as.matrix(ce[,1:2]), proj=projection(aoi), inv=T)
+  ce <- cbind(points.wgs84, ce)
+  names(ce)[1:2] <- c("lon", "lat")
+  print("loaded csv")
+  return(ce)
+}
+
 shinyServer(function(input, output, session) {
   
-  loadCSV <- reactive ({ 
+  loadONE <- reactive({ 
     if (input$upload == 0)
       return(NULL)
 
     isolate({
-    ws <- input$InVEST
-    ce <- read.csv(file.path(ws, "outputs/coastal_exposure/coastal_exposure.csv"), header=T)
-    aoi <- raster(file.path(ws, "intermediate/00_preprocessing/00_PRE_aoi.tif"))
-    
-    points.wgs84 <- rgdal::project(as.matrix(ce[,1:2]), proj=projection(aoi), inv=T)
-    
-    ce <- cbind(points.wgs84, ce)
-    names(ce)[1:2] <- c("lon", "lat")
-    print("loaded csv")
-    return(ce)
+        ce <- LoadSpace(input$InVEST)
+        return(ce)
     })
   })
+  
+  loadTWO <- reactive({
+    if (input$Difference == 0)
+      return(NULL)
+    isolate({
+      ce.base <- LoadSpace(input$Baseline)
+      ce.scen <- LoadSpace(input$Scenario)
+      return(list(ce.base, ce.scen))
+    })
+  })
+  
   
   loadLOG <- reactive({
     if (input$upload == 0)
       return(NULL)
-#     validate(
-#       need(input$InVEST != "", "Please select an InVEST workspace")
-#     )
 
     #isolate({
       #input$upload
@@ -94,7 +107,7 @@ shinyServer(function(input, output, session) {
     if (input$upload == 0)
       return(NULL)
     isolate({
-      ce <- loadCSV()
+      ce <- loadONE()
     })
     leafletMap(
       "map", "100%", 400,
@@ -103,7 +116,7 @@ shinyServer(function(input, output, session) {
       options=list(
         center = c(mean(ce$lat), mean(ce$lon)),
         zoom = 8,
-        maxBounds = list(list(min(ce$lat)-1, min(ce$lon)-1), list(max(ce$lat)+1, max(ce$lat)+1))
+        maxBounds = list(list(min(ce$lat)-1, min(ce$lon)-1), list(max(ce$lat)+1, max(ce$lon)+1))
       )
     )
   })
@@ -113,7 +126,7 @@ shinyServer(function(input, output, session) {
       return(NULL)
     isolate({
       print("updating select")
-      ce <- loadCSV()
+      ce <- loadONE()
       updateSelectInput(session, "mapvar",
                             label = "Map Layer",
                             choices = names(ce),
@@ -128,16 +141,16 @@ shinyServer(function(input, output, session) {
   
 
   pointsInBounds <- reactive({
-    validate(
-      need(input$InVEST != "", "Please select an InVEST workspace")
-    )
+#     validate(
+#       need(input$InVEST != "", "Please select an InVEST workspace")
+#     )
    if (is.null(input$map_bounds))
-     return(loadCSV())
+     return(loadONE())
     bounds <- input$map_bounds
     latRng <- range(bounds$north, bounds$south)
     lngRng <- range(bounds$east, bounds$west)
     
-    subset(loadCSV(),
+    subset(loadONE(),
            lat >= latRng[1] & lat <= latRng[2] &
              lon >= lngRng[1] & lon <= lngRng[2])
   })
@@ -148,11 +161,9 @@ shinyServer(function(input, output, session) {
       return(NULL)
     if (input$mapvar == "")
       return(NULL)
-#     validate(
-#       need(!is.null(input$mapvar), "Please select a map layer")
-#     )
+
     #isolate({
-      ce <- loadCSV()
+      ce <- loadONE()
       print(class(ce))
       print(input$mapvar)
       cols <- brewer.pal(5, "YlOrRd")[as.numeric(cut(ce[[input$mapvar]], breaks=5))]
@@ -165,10 +176,8 @@ shinyServer(function(input, output, session) {
   observe({
     if (input$upload == 0)
       return(NULL)
-#     validate(
-#       need(input$mapvar != "", "Please select a map layer")
-#     )
-    ce <- loadCSV()
+    
+    ce <- loadONE()
     ce$col <- getCol()
     #print(head(ce$col))
     #pts <- pointsInBounds()
@@ -178,18 +187,13 @@ shinyServer(function(input, output, session) {
       ce$lon,
       1000/(input$map_zoom^1.2),
       row.names(ce),
-#       lapply(brewer.pal(5, "YlOrRd"), function(x) {
-#         list(color = x)
-#       })
       list(fill=TRUE, fillOpacity=1, stroke=F, fillColor=ce$col)
     )
   })
 
 
 observe({
-#   validate(
-#     need(input$mapvar != "", "Please select a map layer")
-#   )
+
   if (input$upload == 0)
     return(NULL)
   
@@ -199,7 +203,7 @@ observe({
   map$clearPopups()
   
   isolate({
-    ce <- loadCSV()
+    ce <- loadONE()
     #cities <- topCitiesInBounds()
     coast <- ce[row.names(ce) == event$id,]
     #selectedcoast <<- coast
@@ -239,112 +243,37 @@ output$hist <- renderPlot({
   print(gg.hist)
 })
 
-##### GGmaps #######
-#   locale <- matrix(NA, nrow=2, ncol=2, dimnames=list(c("x", "y"), c("min", "max")))
-#   locale[1,1] <- min(ce$lon)
-#   locale[1,2] <- max(ce$lon)
-#   locale[2,1] <- min(ce$lat)
-#   locale[2,2] <- max(ce$lat)
-#   ggbase <- get_map(location=locale, maptype="terrain", color="color", source="google", zoom=input$zoom)
-# 
-# 
-# output$ggmaps <- renderPlot({
-#   ce$mapvar <- ce[[input$mapvar]]
-#   gg.layer <- ggmap(ggbase) +
-#     geom_point(data=ce, aes(x=lon, y=lat, color=cut(mapvar, 5))) +
-#     scale_color_brewer(palette="YlOrRd", type="qual")
-#   print(gg.layer)
-# })
+  output$diffnames <- renderUI({
+    if (input$Difference == 0)
+      return(NULL)
+    isolate({
+      df.base <- loadTWO()[[1]]
+      df.scen <- loadTWO()[[2]]
+    })
+    checkboxGroupInput("fieldnames", 
+                 label="Select values to compare", 
+                 choices=intersect(names(df.base)[-6:-1], names(df.scen)))
+  })
 
-# observe({
-#   pts <- pointsInBounds()
-#   print(dim(pts))
-#   pts$col <- brewer.pal(5, "YlOrRd")[as.numeric(cut(pts$wave_exposure, breaks=5))]
-#   map2$addCircle(
-#     pts$lat,
-#     pts$lon,
-#     (200/input$map_zoom)^2,
-#     row.names(pts),
-#     #       lapply(brewer.pal(5, "YlOrRd"), function(x) {
-#     #         list(color = x)
-#     #       })
-#     list(fill=TRUE, fillOpacity=1, stroke=F, fillColor=pts$col)
-#   )
-# })
-  
+  output$difftable <- renderDataTable({
+    if (input$diffcalc == 0)
+      return(NULL)
+    isolate({
+      df.base <- loadTWO()[[1]]
+      df.scen <- loadTWO()[[2]]
+      df.diff <- df.scen[ ,input$fieldnames] - df.base[ ,input$fieldnames]
+    })
+    print(df.diff)
+  })
 
-# ##### Rmaps Map ######
-# 
-# getCol <- reactive({
-#   cols <- brewer.pal(5, "YlOrRd")[as.numeric(cut(ce[[input$Rmapvar]], breaks=5))]
-#   print(head(cols))
-#   return(cols)
-# })
-# 
-#   plotMap <- function(){
-#     ce$fillColor <- getCol()
-#     
-#     map1 <- Leaflet$new()
-#     map1$set(width=400, height=400)
-#     map1$setView(c(mean(ce$lat), mean(ce$lon)), 7)
-#     map1$tileLayer('http://otile1.mqcdn.com/tiles/1.0.0/sat/{z}/{x}/{y}.jpg')
-#     map1$addAssets(jshead = "https://github.com/turban/Leaflet.Sync/blob/master/L.Map.Sync.js")
-#     map1$geoJson(toGeoJSON(ce, lat.lon=c("lat","lon")),
-#       pointToLayer =  "#! function(feature, latlng){
-#       return L.circleMarker(latlng, {
-#         radius: 4,
-#         fillColor: feature.properties.fillColor || 'blue',    
-#         color: '#000',
-#         weight: 1,
-#         fillOpacity: 0.8
-#       })
-#     } !#")
-#     return(map1)
-#     #map1$circle(c(49, -124.15), 500)
-#     #       4,
-#     #       row.names(ce),
-#     #       #       lapply(brewer.pal(5, "YlOrRd"), function(x) {
-#     #       #         list(color = x)
-#     #       #       })
-#     #       list(fill=TRUE, fillOpacity=1, stroke=F, fillColor=ce$col)
-#     #       )
-#     #leafletLib <- file.path(find.package("rCharts"), "libraries", "leaflet")
-#     #HTML(map1$html(chartId = "rmap"))
-#   }
-#     
-# 
-# output$mapcontainer <- renderMap({
-#   plotMap()
-# })
-
-##### Other Tabs ####
-  
-
-
-#   riskycols <- c("red", "blue", "yellow")
-#   names(riskycols) <- c("HIGH", "LOW", "MED")
-  
-  
-  ## Get parameters for map window from AOI
-    
-
-#   output$hist <- renderPlot({  
-#     ## Make y variable take user input
-#     ce$histvar <- ce[[input$var]]
-#     gg.hist <- ggplot(ce) + 
-#       geom_bar(aes(x=histvar), width=.4) +
-#       #scale_fill_manual(name="RISK", values=riskycols) +
-#       th.bar
-#     print(gg.hist)
-#   })
   
   output$vulnerability <- renderDataTable({ 
-    print(loadCSV())
+    print(loadONE())
   })
 
   output$downloadCSV <- downloadHandler(
     filename = paste('data-', '.csv', sep=''),
-    content = function(file) {write.csv(loadCSV(), file)}
+    content = function(file) {write.csv(loadONE(), file)}
   )
 
 })
