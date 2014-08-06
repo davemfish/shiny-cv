@@ -19,8 +19,8 @@ library(xtable)
 
 ### ggplot theme ####
 th.bar <- theme(panel.background = element_rect(fill="white"), 
-                axis.text.y=element_text(size=12),
-                axis.text.x=element_text(size=12),
+                axis.text.y=element_text(size=11),
+                axis.text.x=element_text(size=11),
                 axis.title.x=element_text(size=14),
                 axis.title.y=element_text(size=14),
                 strip.text=element_text(size=11), 
@@ -33,6 +33,7 @@ th.bar <- theme(panel.background = element_rect(fill="white"),
                 panel.grid.major.x=element_blank(),
                 #legend.text=element_blank(),
                 legend.position="none")
+
 
 print("start function")
 ###### Server Function ##############
@@ -185,7 +186,7 @@ shinyServer(function(input, output, session) {
     map$addCircle(
       ce$lat,
       ce$lon,
-      1000/(input$map_zoom^1.2),
+      700/(input$map_zoom^1.3),
       row.names(ce),
       list(fill=TRUE, fillOpacity=1, stroke=F, fillColor=ce$col)
     )
@@ -238,7 +239,8 @@ output$hist <- renderPlot({
     facet_wrap("variable", nrow=ceiling(sqrt(ncol(pts))), ncol=ceiling(sqrt(ncol(pts)))) +
     scale_fill_brewer(palette="YlOrRd", type="qual") +
     xlim(0,5) +
-    ylab("count") +
+    ylab("# of Coastline Segments") +
+    xlab("Vulnerability Index") +
     th.bar
   print(gg.hist)
 })
@@ -255,15 +257,29 @@ output$hist <- renderPlot({
                  choices=intersect(names(df.base)[-6:-1], names(df.scen)))
   })
 
+  output$mapcompare <- renderUI({
+    L1 <- Leaflet$new()
+    L1$addAssets(jshead = "https://github.com/turban/Leaflet.Sync/blob/master/L.Map.Sync.js")
+    L1$tileLayer("https://a.tiles.mapbox.com/v3/geointerest.map-dqz2pa8r/{z}/{x}/{y}.png")
+    L1$set(width = 400, height = 400)
+    L1$setView(c(50, -125), 10)
+    
+    return(L1$show('inline'))
+  })
+
   output$difftable <- renderDataTable({
     if (input$diffcalc == 0)
       return(NULL)
     isolate({
       df.base <- loadTWO()[[1]]
       df.scen <- loadTWO()[[2]]
-      df.diff <- df.scen[ ,input$fieldnames] - df.base[ ,input$fieldnames]
+      df.diff <- data.frame(df.scen[ ,input$fieldnames] - df.base[ ,input$fieldnames])
+      names(df.diff) <- input$fieldnames
+      print(class(df.diff))
+      print(names(df.diff))
+      df.diff <- cbind(df.base[,c("lat", "lon")], df.diff)
     })
-    print(df.diff)
+    return(df.diff)
   })
 
   

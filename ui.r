@@ -86,6 +86,23 @@ shinyUI(#fluidPage(
                         )
                       )
              ),
+             tabPanel("Compare Maps",
+                      sidebarLayout(
+                        sidebarPanel(
+                          selectInput("Baseline", label="Choose Baseline Results", choices=getdir(), selected=NULL),
+                          selectInput("Scenario", label="Choose Scenario Results", choices=getdir(), selected=NULL),
+                          actionButton("Difference", "Upload Results"),
+                          tags$br(),
+                          tags$br(),
+                          uiOutput("diffnames"),
+                          tags$br(),
+                          actionButton("diffcalc", "Calculate Differences")
+                        ),
+                        mainPanel(
+                          uiOutput("mapcompare")
+                        )
+                      )
+             ),
              tabPanel("Help/About",
                       
                       h3("About Plots"),
