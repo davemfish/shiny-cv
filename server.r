@@ -4,14 +4,10 @@ library(sp)
 library(RColorBrewer)
 library(ggplot2)
 library(plyr)
-library(ggmap)
 library(rgeos)
 library(raster)
-#library(rasterVis)
-library(gridExtra)
 library(reshape2)
 library(leaflet)
-#library(plotGoogleMaps)
 library(rCharts)
 library(xtable)
 
@@ -51,7 +47,23 @@ LoadSpace <- function(inputX){
   return(ce)
 }
 
+
 shinyServer(function(input, output, session) {
+  
+  observe({ 
+    if (input$ChooseDir == 0)
+      return(NULL)
+    
+    dirname <- choose.dir()
+    output$session <- renderUI({
+      textInput("InVEST", "InVEST Workspace", dirname)
+    })
+  })
+  
+  
+#   output$sessname <- renderUI({
+#     selectInput("InVEST", "InVEST Workspace", output$session)
+#   })
   
   loadONE <- reactive({ 
     if (input$upload == 0)
@@ -256,16 +268,63 @@ output$hist <- renderPlot({
                  label="Select values to compare", 
                  choices=intersect(names(df.base)[-6:-1], names(df.scen)))
   })
+  
+L1 <- Leaflet$new()
+L1$addAssets(jshead = "https://github.com/turban/Leaflet.Sync/blob/master/L.Map.Sync.js")
+L1$tileLayer("https://a.tiles.mapbox.com/v3/geointerest.map-dqz2pa8r/{z}/{x}/{y}.png")
+L1$set(width = 400, height = 400)
+L1$setView(c(50, -125), 10)
 
-  output$mapcompare <- renderUI({
-    L1 <- Leaflet$new()
-    L1$addAssets(jshead = "https://github.com/turban/Leaflet.Sync/blob/master/L.Map.Sync.js")
-    L1$tileLayer("https://a.tiles.mapbox.com/v3/geointerest.map-dqz2pa8r/{z}/{x}/{y}.png")
-    L1$set(width = 400, height = 400)
-    L1$setView(c(50, -125), 10)
-    
-    return(L1$show('inline'))
-  })
+#   output$mapcompare <- renderUI({
+#     #HTML(L1$show('inline', include_assets=T))
+#     #return(L1)
+#     #HTML('<strong> Hello World <strong>')
+#     HTML(<div id = 'chart38405a047b7f' class = 'rChart leaflet'></div>
+# <script>
+#   var spec = {
+#          "dom": "chart38405a047b7f",
+#          "width":            400,
+#          "height":            400,
+#          "urlTemplate": "https://a.tiles.mapbox.com/v3/geointerest.map-dqz2pa8r/{z}/{x}/{y}.png",
+#          "layerOpts": {
+#          "attribution": "Map data<a href=\"http://openstreetmap.org\">OpenStreetMap</a>\n         contributors, Imagery<a href=\"http://mapbox.com\">MapBox</a>" 
+#          },
+#          "center": [             50,           -125 ],
+#          "zoom":             10,
+#          "id": "chart38405a047b7f" 
+#   }
+#          
+#          var map = L.map(spec.dom, spec.mapOpts)
+#          
+#          map.setView(spec.center, spec.zoom);
+#          
+#          if (spec.provider){
+#          L.tileLayer.provider(spec.provider).addTo(map)    
+#          } else {
+#          L.tileLayer(spec.urlTemplate, spec.layerOpts).addTo(map)
+#          }
+#          
+#          
+#          
+#          
+#          
+#          
+#          if (spec.circle2){
+#          for (var c in spec.circle2){
+#          var circle = L.circle(c.center, c.radius, c.opts)
+#          .addTo(map);
+#          }
+#          }
+#          
+#          
+#          
+#          
+#          
+#          
+#          
+#          
+#          </script>)
+#   })
 
   output$difftable <- renderDataTable({
     if (input$diffcalc == 0)

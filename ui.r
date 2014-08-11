@@ -14,7 +14,10 @@ shinyUI(#fluidPage(
              tabPanel("Get Started",
                       sidebarLayout(
                         sidebarPanel(
-                                     selectInput("InVEST", label="Choose InVEST workspace", choices=getdir(), selected=NULL),
+                                     #selectInput("InVEST", label="Choose InVEST workspace", choices=getdir(), selected=NULL),
+                                     actionButton("ChooseDir", "Browse to Results"),
+                                     tags$br(),
+                                     uiOutput("session"),
                                      tags$br(),
                                      actionButton("upload", "Upload Results")
                                      ),
@@ -87,21 +90,21 @@ shinyUI(#fluidPage(
                       )
              ),
              tabPanel("Compare Maps",
-                      sidebarLayout(
-                        sidebarPanel(
-                          selectInput("Baseline", label="Choose Baseline Results", choices=getdir(), selected=NULL),
-                          selectInput("Scenario", label="Choose Scenario Results", choices=getdir(), selected=NULL),
-                          actionButton("Difference", "Upload Results"),
-                          tags$br(),
-                          tags$br(),
-                          uiOutput("diffnames"),
-                          tags$br(),
-                          actionButton("diffcalc", "Calculate Differences")
-                        ),
-                        mainPanel(
+#                       sidebarLayout(
+#                         sidebarPanel(
+#                           selectInput("Baseline", label="Choose Baseline Results", choices=getdir(), selected=NULL),
+#                           selectInput("Scenario", label="Choose Scenario Results", choices=getdir(), selected=NULL),
+#                           actionButton("Difference", "Upload Results"),
+#                           tags$br(),
+#                           tags$br(),
+#                           uiOutput("diffnames"),
+#                           tags$br(),
+#                           actionButton("diffcalc", "Calculate Differences")
+#                         ),
+                        mainPanel("main",
                           uiOutput("mapcompare")
                         )
-                      )
+                      #)
              ),
              tabPanel("Help/About",
                       
