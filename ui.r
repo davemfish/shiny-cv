@@ -15,12 +15,23 @@ shinyUI(#fluidPage(
                       sidebarLayout(
                         sidebarPanel(
                                      #selectInput("InVEST", label="Choose InVEST workspace", choices=getdir(), selected=NULL),
-                                     actionButton("ChooseDir", "Browse to Results"),
+                                     h4("1) Select an InVEST run to visualize"),
+                                     p("Browse to the directory you defined as your workspace when you ran the InVEST model. 
+                                       Your workspace contains these 3 subfolders:"),
+                                     p("     'intermediate'"),
+                                     p("     'outputs'"),
+                                     p("     'tmp'"),
+                                     actionButton("ChooseDir", "Browse to Workspace"),
                                      tags$br(),
                                      uiOutput("session"),
                                      tags$br(),
-                                     actionButton("upload", "Upload Results")
-                                     ),
+                                     h4("2) Upload InVEST results"),
+                                     actionButton("upload", "Upload Results"),
+                                     h4("3) Explore your results"),
+                                     p("After clicking 'Upload Results', information about the parameters of your InVEST run will appear on this page.
+                                       Results are visualized on the other tabs at the top. To visualize a different InVEST output, 
+                                       return to this tab, browse to a new worksapce, and click upload again.")
+                        ),
                         mainPanel(
                                   h3("Current InVEST Configuration"),
                                   h4(textOutput("directory")),

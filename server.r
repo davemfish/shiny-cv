@@ -47,6 +47,7 @@ LoadSpace <- function(inputX){
   return(ce)
 }
 
+#dirnames <- list()
 
 shinyServer(function(input, output, session) {
   
@@ -55,8 +56,9 @@ shinyServer(function(input, output, session) {
       return(NULL)
     
     dirname <- choose.dir()
+    #str(input$ChooseDir)
     output$session <- renderUI({
-      textInput("InVEST", "InVEST Workspace", dirname)
+      textInput("InVEST", "InVEST Workspace", value=dirname)
     })
   })
   
