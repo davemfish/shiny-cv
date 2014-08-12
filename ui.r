@@ -47,17 +47,6 @@ shinyUI(#fluidPage(
                         column(6,
                                selectInput("mapvar", label="Map Layer", choices=NULL),
                                uiOutput("leafmap")
-#                                leafletMap(
-#                                  "map", "100%", 400,
-#                                  #initialTileLayer = 'http://otile1.mqcdn.com/tiles/1.0.0/sat/{z}/{x}/{y}.jpg',
-#                                  initialTileLayer = "https://a.tiles.mapbox.com/v3/geointerest.map-dqz2pa8r/{z}/{x}/{y}.png",
-#                                  initialTileLayerAttribution = HTML('OSM & Mapbox'),
-#                                  options=list(
-#                                    center = c(49.25, -125.8),
-#                                    zoom = 8,
-#                                    maxBounds = list(list(-90, -180), list(90, 180))
-#                                  )
-#                                )
                         ),
                         
                         column(6,
@@ -67,6 +56,21 @@ shinyUI(#fluidPage(
                         )
                       )
              ),
+             tabPanel("Plots2",
+                      fluidRow(
+                        column(6,
+                               selectInput("mapvar2", label="Map Layer", choices=NULL),
+                               mapOutput("Rleafmap")
+                        )#,
+                        
+#                         column(6,
+#                                h5("The histograms display only the points within the current map view"),
+#                                br(),
+#                                plotOutput("hist")
+#                         )
+                      )
+             ),
+
              
              tabPanel("Tables", 
                       

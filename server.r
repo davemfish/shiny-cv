@@ -10,6 +10,7 @@ library(reshape2)
 library(leaflet)
 library(rCharts)
 library(xtable)
+library(hwriter)
 
 
 
@@ -118,23 +119,23 @@ shinyServer(function(input, output, session) {
     })
   })
 
-  output$leafmap <- renderUI({
-    if (input$upload == 0)
-      return(NULL)
-    isolate({
-      ce <- loadONE()
-    })
-    leafletMap(
-      "map", "100%", 400,
-      initialTileLayer = "https://a.tiles.mapbox.com/v3/geointerest.map-dqz2pa8r/{z}/{x}/{y}.png",
-      initialTileLayerAttribution = HTML('OSM & Mapbox'),
-      options=list(
-        center = c(mean(ce$lat), mean(ce$lon)),
-        zoom = 8,
-        maxBounds = list(list(min(ce$lat)-1, min(ce$lon)-1), list(max(ce$lat)+1, max(ce$lon)+1))
-      )
-    )
-  })
+#   output$leafmap <- renderUI({
+#     if (input$upload == 0)
+#       return(NULL)
+#     isolate({
+#       ce <- loadONE()
+#     })
+#     leafletMap(
+#       "map", "100%", 400,
+#       initialTileLayer = "https://a.tiles.mapbox.com/v3/geointerest.map-dqz2pa8r/{z}/{x}/{y}.png",
+#       initialTileLayerAttribution = HTML('OSM & Mapbox'),
+#       options=list(
+#         center = c(mean(ce$lat), mean(ce$lon)),
+#         zoom = 8,
+#         maxBounds = list(list(min(ce$lat)-1, min(ce$lon)-1), list(max(ce$lat)+1, max(ce$lon)+1))
+#       )
+#     )
+#   })
 
   observe({
     if (input$upload == 0)
@@ -147,12 +148,17 @@ shinyServer(function(input, output, session) {
                             choices = names(ce),
                             selected = "coastal_exposure"
                           )
+      updateSelectInput(session, "mapvar2",
+                        label = "Map Layer",
+                        choices = names(ce),
+                        selected = "coastal_exposure"
+      )
     })
   })
   
   ##### Leaflet-Shiny Map ######
   
-  map <- createLeafletMap(session, 'map')
+#   map <- createLeafletMap(session, 'map')
   
 
   pointsInBounds <- reactive({
@@ -174,72 +180,105 @@ shinyServer(function(input, output, session) {
   getCol <- reactive({
     if (input$upload == 0)
       return(NULL)
-    if (input$mapvar == "")
+    if (input$mapvar2 == "")
       return(NULL)
 
     #isolate({
       ce <- loadONE()
       print(class(ce))
-      print(input$mapvar)
-      cols <- brewer.pal(5, "YlOrRd")[as.numeric(cut(ce[[input$mapvar]], breaks=5))]
+      print(input$mapvar2)
+      cols <- brewer.pal(5, "YlOrRd")[as.numeric(cut(ce[[input$mapvar2]], breaks=5))]
       #print(head(cols))
       return(cols)
     #})
   })
 
 
-  observe({
+#   observe({
+#     if (input$upload == 0)
+#       return(NULL)
+#     
+#     ce <- loadONE()
+#     ce$col <- getCol()
+#     #print(head(ce$col))
+#     #pts <- pointsInBounds()
+#     #print(dim(pts))
+#     map$addCircle(
+#       ce$lat,
+#       ce$lon,
+#       700/(input$map_zoom^1.3),
+#       row.names(ce),
+#       list(fill=TRUE, fillOpacity=1, stroke=F, fillColor=ce$col)
+#     )
+#   })
+
+
+# observe({
+# 
+#   if (input$upload == 0)
+#     return(NULL)
+#   
+#   event <- input$map_shape_click
+#   if (is.null(event))
+#     return()
+#   map$clearPopups()
+#   
+#   isolate({
+#     ce <- loadONE()
+#     #cities <- topCitiesInBounds()
+#     coast <- ce[row.names(ce) == event$id,]
+#     #selectedcoast <<- coast
+#     content <- print.xtable(xtable(t(coast[c(1,2,7:ncol(coast))])), type="html")
+#     map$showPopup(event$lat, event$lng, content, event$id)
+#   })
+# })
+
+  L1 <- Leaflet$new()
+  #L1$addAssets(jshead = "https://github.com/turban/Leaflet.Sync/blob/master/L.Map.Sync.js")
+  L1$tileLayer("https://a.tiles.mapbox.com/v3/geointerest.map-dqz2pa8r/{z}/{x}/{y}.png")
+  L1$set(width = 400, height = 400)
+
+plotMap <- reactive({
+
     if (input$upload == 0)
       return(NULL)
     
     ce <- loadONE()
     ce$col <- getCol()
-    #print(head(ce$col))
-    #pts <- pointsInBounds()
-    #print(dim(pts))
-    map$addCircle(
-      ce$lat,
-      ce$lon,
-      700/(input$map_zoom^1.3),
-      row.names(ce),
-      list(fill=TRUE, fillOpacity=1, stroke=F, fillColor=ce$col)
-    )
-  })
-
-
-observe({
-
-  if (input$upload == 0)
-    return(NULL)
-  
-  event <- input$map_shape_click
-  if (is.null(event))
-    return()
-  map$clearPopups()
-  
-  isolate({
-    ce <- loadONE()
-    #cities <- topCitiesInBounds()
-    coast <- ce[row.names(ce) == event$id,]
-    #selectedcoast <<- coast
-    content <- print.xtable(xtable(t(coast[c(1,2,7:ncol(coast))])), type="html")
-    map$showPopup(event$lat, event$lng, content, event$id)
-  })
+    tmp.ce <- apply(ce, 1, as.list)
+    tmp.ce <- lapply(tmp.ce, function(x){
+      mat <- as.matrix(unlist(x))
+      mat <- as.matrix(mat[!(rownames(mat) %in% c("x", "y", "array.row", "array.col", "col")),])
+      x$popup <- hwrite(mat)
+      return(x)
+    })
+    L1$setView(c(mean(ce$lat), mean(ce$lon)), 9)
+    L1$geoJson(toGeoJSON(tmp.ce, lat='lat', lon='lon'), 
+               onEachFeature = '#! function(feature, layer){
+      layer.bindPopup(feature.properties.popup)
+    } !#',
+               pointToLayer =  "#! function(feature, latlng){
+      return L.circleMarker(latlng, {
+        radius: 4,
+        fillColor: feature.properties.col || 'white',    
+        color: '#000',
+        weight: 1,
+        fillOpacity: 0.8
+      })
+    } !#")
+    L1$enablePopover(TRUE)
+  return(L1)
 })
 
-# Res <- reactive({
-#   if (input$upload == 0)
-#     return(NULL)
-#   #isolate({
-#   cellsize <- loadLOG()[6]
-#   print(cellsize)
-#   resolution <- as.numeric(tail(unlist(strsplit(cellsize, split=" ")), 1))
-#   print(resolution)
-#   #return(resolution)
-#   #})
-# })
-# 
-# observe({print(Res())})
+
+output$Rleafmap <- renderMap({
+    if (input$upload == 0)
+      return(NULL)
+    plotMap()
+})
+
+
+
 
 
 #print(res())
@@ -249,10 +288,11 @@ output$hist <- renderPlot({
   plotpts <- melt(pts)
   #pt2km <- Res()
   gg.hist <- ggplot(plotpts) + 
-    geom_bar(aes(x=value, y=..count.., fill=cut(value, 5)), binwidth=.5) +
+    geom_bar(aes(x=value, y=..count.., fill=cut(value, c(0,1,2,3,4,5), include.lowest=T)), binwidth=.5, color="white") +
+    #geom_histogram(aes(x=value, color="white", fill=cut(value, c(0,1,2,3,4,5))), binwidth=.5) +
     facet_wrap("variable", nrow=ceiling(sqrt(ncol(pts))), ncol=ceiling(sqrt(ncol(pts)))) +
     scale_fill_brewer(palette="YlOrRd", type="qual") +
-    xlim(0,5) +
+    scale_x_continuous(breaks=c(0:5)) +
     ylab("# of Coastline Segments") +
     xlab("Vulnerability Index") +
     th.bar
@@ -271,62 +311,9 @@ output$hist <- renderPlot({
                  choices=intersect(names(df.base)[-6:-1], names(df.scen)))
   })
   
-L1 <- Leaflet$new()
-L1$addAssets(jshead = "https://github.com/turban/Leaflet.Sync/blob/master/L.Map.Sync.js")
-L1$tileLayer("https://a.tiles.mapbox.com/v3/geointerest.map-dqz2pa8r/{z}/{x}/{y}.png")
-L1$set(width = 400, height = 400)
-L1$setView(c(50, -125), 10)
 
-#   output$mapcompare <- renderUI({
-#     #HTML(L1$show('inline', include_assets=T))
-#     #return(L1)
-#     #HTML('<strong> Hello World <strong>')
-#     HTML(<div id = 'chart38405a047b7f' class = 'rChart leaflet'></div>
-# <script>
-#   var spec = {
-#          "dom": "chart38405a047b7f",
-#          "width":            400,
-#          "height":            400,
-#          "urlTemplate": "https://a.tiles.mapbox.com/v3/geointerest.map-dqz2pa8r/{z}/{x}/{y}.png",
-#          "layerOpts": {
-#          "attribution": "Map data<a href=\"http://openstreetmap.org\">OpenStreetMap</a>\n         contributors, Imagery<a href=\"http://mapbox.com\">MapBox</a>" 
-#          },
-#          "center": [             50,           -125 ],
-#          "zoom":             10,
-#          "id": "chart38405a047b7f" 
-#   }
-#          
-#          var map = L.map(spec.dom, spec.mapOpts)
-#          
-#          map.setView(spec.center, spec.zoom);
-#          
-#          if (spec.provider){
-#          L.tileLayer.provider(spec.provider).addTo(map)    
-#          } else {
-#          L.tileLayer(spec.urlTemplate, spec.layerOpts).addTo(map)
-#          }
-#          
-#          
-#          
-#          
-#          
-#          
-#          if (spec.circle2){
-#          for (var c in spec.circle2){
-#          var circle = L.circle(c.center, c.radius, c.opts)
-#          .addTo(map);
-#          }
-#          }
-#          
-#          
-#          
-#          
-#          
-#          
-#          
-#          
-#          </script>)
-#   })
+
+
 
   output$difftable <- renderDataTable({
     if (input$diffcalc == 0)
