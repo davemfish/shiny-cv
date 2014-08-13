@@ -63,7 +63,6 @@ shinyServer(function(input, output, session) {
     })
   })
   
-  
 #   output$sessname <- renderUI({
 #     selectInput("InVEST", "InVEST Workspace", output$session)
 #   })
@@ -78,6 +77,28 @@ shinyServer(function(input, output, session) {
     })
   })
   
+observe({ 
+  if (input$ChooseBase == 0)
+    return(NULL)
+  
+  dirname <- choose.dir()
+  #str(input$ChooseDir)
+  output$Base <- renderUI({
+    textInput("Baseline", "InVEST Workspace", value=dirname)
+  })
+})
+
+observe({ 
+  if (input$ChooseScen == 0)
+    return(NULL)
+  
+  dirname <- choose.dir()
+  #str(input$ChooseDir)
+  output$Scen <- renderUI({
+    textInput("Scenario", "InVEST Workspace", value=dirname)
+  })
+})
+
   loadTWO <- reactive({
     if (input$Difference == 0)
       return(NULL)
@@ -282,7 +303,7 @@ output$Rleafmap <- renderMap({
 
 
 #print(res())
-output$hist <- renderPlot({
+output$hist2 <- renderPlot({
   pts <- pointsInBounds()
   pts <- pts[,7:ncol(pts)]
   plotpts <- melt(pts)
@@ -299,22 +320,88 @@ output$hist <- renderPlot({
   print(gg.hist)
 })
 
-  output$diffnames <- renderUI({
+L2 <- Leaflet$new()
+#L1$addAssets(jshead = "https://github.com/turban/Leaflet.Sync/blob/master/L.Map.Sync.js")
+L2$tileLayer("https://a.tiles.mapbox.com/v3/geointerest.map-dqz2pa8r/{z}/{x}/{y}.png")
+L2$set(width = 400, height = 400)  
+
+getCol2 <- reactive({
+  if (input$Difference == 0)
+    return(NULL)
+  if (is.null(input$fieldnames))
+    return(NULL)
+  
+  #isolate({
+  isolate({
+    df.base <- loadTWO()[[1]]
+    df.scen <- loadTWO()[[2]]
+    diff <- df.scen[ ,input$fieldnames] - df.base[ ,input$fieldnames]
+    #names(df.diff) <- input$fieldnames
+  })
+  #print(class(ce))
+  #print(input$mapvar2)
+  cols <- brewer.pal(9, "RdBu")[as.numeric(cut(diff, breaks=c(-10,-1,-0.5,-0.1,0,0.1,0.5,1,10)))]
+  #print(head(cols))
+  return(cols)
+  #})
+})
+
+output$diffnames <- renderUI({
     if (input$Difference == 0)
       return(NULL)
     isolate({
       df.base <- loadTWO()[[1]]
       df.scen <- loadTWO()[[2]]
     })
-    checkboxGroupInput("fieldnames", 
+    selectInput("fieldnames", 
                  label="Select values to compare", 
-                 choices=intersect(names(df.base)[-6:-1], names(df.scen)))
+                 choices=intersect(names(df.base)[-6:-1], names(df.scen)),
+                 selected = "coastal_exposure")
   })
+
+plotMap2 <- reactive({
+  if (input$Difference == 0)
+    return(NULL)
+  if (is.null(input$fieldnames))
+    return(NULL)
   
+  isolate({
+    df.base <- loadTWO()[[1]]
+    df.scen <- loadTWO()[[2]]
+    df.diff <- data.frame(df.scen[ ,input$fieldnames] - df.base[ ,input$fieldnames])
+    names(df.diff) <- input$fieldnames
+    #print(class(df.diff))
+    #print(names(df.diff))
+    df.diff <- cbind(df.base[,c("lat", "lon")], df.diff)
+  df.diff$col <- getCol2()
+  tmp.diff <- apply(df.diff, 1, as.list)
+  tmp.diff <- lapply(tmp.diff, function(x){
+    mat <- as.matrix(unlist(x))
+    mat <- as.matrix(mat[!(rownames(mat) %in% c("x", "y", "array.row", "array.col", "col")),])
+    x$popup <- hwrite(mat)
+    return(x)
+  })
+  })
+  L2$setView(c(mean(df.diff$lat), mean(df.diff$lon)), 9)
+  L2$geoJson(toGeoJSON(tmp.diff, lat='lat', lon='lon'), 
+             onEachFeature = '#! function(feature, layer){
+             layer.bindPopup(feature.properties.popup)
+} !#',
+             pointToLayer =  "#! function(feature, latlng){
+             return L.circleMarker(latlng, {
+             radius: 4,
+             fillColor: feature.properties.col || 'white',    
+             color: '#000',
+             weight: 1,
+             fillOpacity: 0.8
+             })
+} !#")
+  L2$enablePopover(TRUE)
+  return(L2)
+  })
 
 
-
-
+  
   output$difftable <- renderDataTable({
     if (input$diffcalc == 0)
       return(NULL)
@@ -330,14 +417,45 @@ output$hist <- renderPlot({
     return(df.diff)
   })
 
+output$Rleafmap2 <- renderMap({
+  if (is.null(input$fieldnames))
+    return(NULL)
+  plotMap2()
+})
   
-  output$vulnerability <- renderDataTable({ 
-    print(loadONE())
+output$tablenames <- renderUI({
+  if (input$upload == 0)
+    return(NULL)
+  isolate({
+    df <- loadONE()
   })
+  checkboxGroupInput("tablenames", 
+              label="Select values for a table", 
+              choices=names(df),
+              selected = c("lon", "lat", "coastal_exposure")
+  )
+})
+
+  FormatTable <- reactive({ 
+    if (is.null(input$tablenames))
+      return(NULL)
+    isolate({
+      df <- loadONE()
+      print(names(df))
+      print(input$tablenames)
+      df <- format(df[,input$tablenames], nsmall=3, digits=3)
+    })
+      #print()
+    return(df)
+  })
+
+output$printtable <- renderDataTable({
+  FormatTable()
+})
 
   output$downloadCSV <- downloadHandler(
     filename = paste('data-', '.csv', sep=''),
-    content = function(file) {write.csv(loadONE(), file)}
+    content = function(file) {write.csv(FormatTable(), file)}
   )
 
 })

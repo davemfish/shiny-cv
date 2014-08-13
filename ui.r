@@ -61,45 +61,55 @@ shinyUI(#fluidPage(
                         column(6,
                                selectInput("mapvar2", label="Map Layer", choices=NULL),
                                mapOutput("Rleafmap")
-                        )#,
+                        ),
                         
-#                         column(6,
-#                                h5("The histograms display only the points within the current map view"),
-#                                br(),
-#                                plotOutput("hist")
-#                         )
+                         column(6,
+                                h5(""),
+                                br(),
+                                plotOutput("hist2")
+                         )
                       )
              ),
 
              
              tabPanel("Tables", 
                       
-                      fluidRow(
-                        
-                        #       column(2,
-                        #         sidebarPanel(downloadButton("downloadCSV", label = "Download CSV", class = NULL))
-                        #         ),
-                        
-                        column(12,
-                               wellPanel(downloadButton("downloadCSV", label = "Download CSV", class = NULL)),
-                               dataTableOutput("vulnerability")
-                        )
+                      sidebarLayout(
+                            sidebarPanel()
+                              uiOutput("tablenames"),
+                              br(),
+                              downloadButton("downloadCSV", label = "Download CSV", class = NULL),
+                            ),
+                            mainPanel(
+                              dataTableOutput("printtable"))
                       )
              ),
              tabPanel("Compare Scenarios",
                       sidebarLayout(
                         sidebarPanel(
-                          selectInput("Baseline", label="Choose Baseline Results", choices=getdir(), selected=NULL),
-                          selectInput("Scenario", label="Choose Scenario Results", choices=getdir(), selected=NULL),
-                          actionButton("Difference", "Upload Results"),
+                          p("Use this tab to compare results of two InVEST runs.
+                            For example, you can visualize the differences between a baseline scenario and an additional scenario."),
+                          actionButton("ChooseBase", "Browse to 'Baseline' workspace"),
                           tags$br(),
+                          
+                          uiOutput("Base"),
                           tags$br(),
-                          uiOutput("diffnames"),
+                          actionButton("ChooseScen", "Browse to 'Scenario' workspace"),
+                          
                           tags$br(),
-                          actionButton("diffcalc", "Calculate Differences")
+                        
+                          uiOutput("Scen"),
+                          tags$br(),
+                          actionButton("Difference", "Compare Results"),
+                    
+                          p("After clicking 'Compare Results', values at each coastal segment 
+                            of the 'Baseline' workspace are subtracted from corresponding values 
+                            in the 'Scenario' workspace.")
                         ),
                         mainPanel(
-                          dataTableOutput("difftable")
+                          uiOutput("diffnames"),
+                          mapOutput("Rleafmap2")
+                          #dataTableOutput("difftable")
                           
                         )
                       )
