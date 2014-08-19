@@ -2,9 +2,14 @@ library(shiny)
 library(leaflet)
 library(rCharts)
 library(xtable)
+library(RColorBrewer)
 
-#ce <- read.csv("outputs/coastal_exposure/coastal_exposure.csv", header=T)
-#centermap <- c(mean(ce$lat), mean(ce$lon))
+
+textInputRow <- function (inputId, label, value = "", bgcol="red") {
+  div(style=paste("display:inline-block; background-color:", bgcol, sep=""),
+      tags$label(label, `for` = inputId), 
+      tags$input(id = inputId, type = "text", value = value,class="input-mini"))
+}
 
 # Define UI 
 shinyUI(#fluidPage(
@@ -21,9 +26,9 @@ shinyUI(#fluidPage(
                                      p("     'intermediate'"),
                                      p("     'outputs'"),
                                      p("     'tmp'"),
-                                     actionButton("ChooseDir", "Browse to Workspace"),
+                                     textInput("InVEST", "", "Enter Workspace Path"),
+                                     actionButton("ChooseDir", "Browse"),
                                      tags$br(),
-                                     uiOutput("session"),
                                      tags$br(),
                                      h4("2) Upload InVEST results"),
                                      actionButton("upload", "Upload Results"),
@@ -42,21 +47,21 @@ shinyUI(#fluidPage(
                         )
                       ),
                           
+#              tabPanel("Plots",
+#                       fluidRow(
+#                         column(6,
+#                                selectInput("mapvar", label="Map Layer", choices=NULL),
+#                                uiOutput("leafmap")
+#                         ),
+#                         
+#                         column(6,
+#                                h5("The histograms display only the points within the current map view"),
+#                                br(),
+#                                plotOutput("hist")
+#                         )
+#                       )
+#              ),
              tabPanel("Plots",
-                      fluidRow(
-                        column(6,
-                               selectInput("mapvar", label="Map Layer", choices=NULL),
-                               uiOutput("leafmap")
-                        ),
-                        
-                        column(6,
-                               h5("The histograms display only the points within the current map view"),
-                               br(),
-                               plotOutput("hist")
-                        )
-                      )
-             ),
-             tabPanel("Plots2",
                       fluidRow(
                         column(6,
                                selectInput("mapvar2", label="Map Layer", choices=NULL),
@@ -73,12 +78,11 @@ shinyUI(#fluidPage(
 
              
              tabPanel("Tables", 
-                      
                       sidebarLayout(
-                            sidebarPanel()
+                            sidebarPanel(
                               uiOutput("tablenames"),
                               br(),
-                              downloadButton("downloadCSV", label = "Download CSV", class = NULL),
+                              downloadButton("downloadCSV", label = "Download CSV", class = NULL)
                             ),
                             mainPanel(
                               dataTableOutput("printtable"))
@@ -89,16 +93,16 @@ shinyUI(#fluidPage(
                         sidebarPanel(
                           p("Use this tab to compare results of two InVEST runs.
                             For example, you can visualize the differences between a baseline scenario and an additional scenario."),
-                          actionButton("ChooseBase", "Browse to 'Baseline' workspace"),
-                          tags$br(),
-                          
-                          uiOutput("Base"),
-                          tags$br(),
-                          actionButton("ChooseScen", "Browse to 'Scenario' workspace"),
                           
                           tags$br(),
-                        
-                          uiOutput("Scen"),
+                          
+                          textInput("Baseline", "", "Baseline workspace"),
+                          actionButton("ChooseBase", "Browse"),
+                          tags$br(),
+                          tags$br(),
+                          textInput("Scenario", "", "Scenario workspace"),
+                          actionButton("ChooseScen", "Browse"),
+                          tags$br(),
                           tags$br(),
                           actionButton("Difference", "Compare Results"),
                     
@@ -108,29 +112,40 @@ shinyUI(#fluidPage(
                         ),
                         mainPanel(
                           uiOutput("diffnames"),
-                          mapOutput("Rleafmap2")
+                          mapOutput("Rleafmap2"),
+                          h5("Adjust colors"),
+                          p("Enter numbers to change the range of values assigned to each color. Use the histogram of values and the vertical dashed lines as a guide. Colors on the map will update accordingly."),
+                          textInputRow(inputId="Breaks.3", label="", value=-2, bgcol=brewer.pal(7, "RdBu")[1]),
+                          textInputRow(inputId="Breaks.2", label="", value=-0.5, brewer.pal(7, "RdBu")[2]),
+                          textInputRow(inputId="Breaks.1", label="", value=-0.05, brewer.pal(7, "RdBu")[3]),
+                          textInputRow(inputId="Breaks0", label="", value=0, brewer.pal(7, "RdBu")[4]),
+                          textInputRow(inputId="Breaks1", label="", value=0.05, brewer.pal(7, "RdBu")[5]),
+                          textInputRow(inputId="Breaks2", label="", value=0.5, brewer.pal(7, "RdBu")[6]),
+                          textInputRow(inputId="Breaks3", label="", value=2, brewer.pal(7, "RdBu")[7]),
+                          actionButton("Symbolize", "Symbolize"),
+                          plotOutput("hist_diff", width=600, height=200)
                           #dataTableOutput("difftable")
                           
                         )
                       )
              ),
-             tabPanel("Compare Maps",
-#                       sidebarLayout(
-#                         sidebarPanel(
-#                           selectInput("Baseline", label="Choose Baseline Results", choices=getdir(), selected=NULL),
-#                           selectInput("Scenario", label="Choose Scenario Results", choices=getdir(), selected=NULL),
-#                           actionButton("Difference", "Upload Results"),
-#                           tags$br(),
-#                           tags$br(),
-#                           uiOutput("diffnames"),
-#                           tags$br(),
-#                           actionButton("diffcalc", "Calculate Differences")
-#                         ),
-                        mainPanel("main",
-                          uiOutput("mapcompare")
-                        )
-                      #)
-             ),
+#              tabPanel("Compare Maps",
+# #                       sidebarLayout(
+# #                         sidebarPanel(
+# #                           selectInput("Baseline", label="Choose Baseline Results", choices=getdir(), selected=NULL),
+# #                           selectInput("Scenario", label="Choose Scenario Results", choices=getdir(), selected=NULL),
+# #                           actionButton("Difference", "Upload Results"),
+# #                           tags$br(),
+# #                           tags$br(),
+# #                           uiOutput("diffnames"),
+# #                           tags$br(),
+# #                           actionButton("diffcalc", "Calculate Differences")
+# #                         ),
+#                         mainPanel("main",
+#                           uiOutput("mapcompare")
+#                         )
+#                       #)
+#              ),
              tabPanel("Help/About",
                       
                       h3("About Plots"),

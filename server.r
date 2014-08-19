@@ -31,6 +31,22 @@ th.bar <- theme(panel.background = element_rect(fill="white"),
                 #legend.text=element_blank(),
                 legend.position="none")
 
+th.hist <- theme(panel.background = element_rect(fill="white"), 
+                 axis.text.y=element_text(size=12),
+                 axis.text.x=element_text(size=12),
+                 #axis.title.x=element_blank(),
+                 #axis.title.y=element_blank(),
+                 #strip.text=element_blank(), 
+                 strip.background=element_blank(), 
+                 panel.border = element_rect(color="black", fill=NA), 
+                 #panel.grid.minor.x=element_line(size=.2, color="gray", linetype="dashed"), 
+                 panel.grid.major.y=element_blank(),
+                 panel.grid.minor.y=element_blank(),
+                 panel.grid.minor.x=element_blank(),
+                 panel.grid.major.x=element_blank(),
+                 #legend.text=element_blank(),
+                 legend.position="none")
+
 
 print("start function")
 ###### Server Function ##############
@@ -48,6 +64,7 @@ LoadSpace <- function(inputX){
   return(ce)
 }
 
+
 #dirnames <- list()
 
 shinyServer(function(input, output, session) {
@@ -58,8 +75,8 @@ shinyServer(function(input, output, session) {
     
     dirname <- choose.dir()
     #str(input$ChooseDir)
-    output$session <- renderUI({
-      textInput("InVEST", "InVEST Workspace", value=dirname)
+    isolate({
+      updateTextInput(session, "InVEST", "InVEST Workspace", value=dirname)
     })
   })
   
@@ -83,8 +100,8 @@ observe({
   
   dirname <- choose.dir()
   #str(input$ChooseDir)
-  output$Base <- renderUI({
-    textInput("Baseline", "InVEST Workspace", value=dirname)
+  isolate({
+    updateTextInput("Baseline", "", value=dirname)
   })
 })
 
@@ -94,8 +111,8 @@ observe({
   
   dirname <- choose.dir()
   #str(input$ChooseDir)
-  output$Scen <- renderUI({
-    textInput("Scenario", "InVEST Workspace", value=dirname)
+  isolate({
+    updateTextInput("Scenario", "", value=dirname)
   })
 })
 
@@ -257,7 +274,7 @@ observe({
   L1 <- Leaflet$new()
   #L1$addAssets(jshead = "https://github.com/turban/Leaflet.Sync/blob/master/L.Map.Sync.js")
   L1$tileLayer("https://a.tiles.mapbox.com/v3/geointerest.map-dqz2pa8r/{z}/{x}/{y}.png")
-  L1$set(width = 400, height = 400)
+  L1$set(width = 550, height = 400)
 
 plotMap <- reactive({
 
@@ -314,6 +331,7 @@ output$hist2 <- renderPlot({
     facet_wrap("variable", nrow=ceiling(sqrt(ncol(pts))), ncol=ceiling(sqrt(ncol(pts)))) +
     scale_fill_brewer(palette="YlOrRd", type="qual") +
     scale_x_continuous(breaks=c(0:5)) +
+    xlim(-0.1, 5.1) +
     ylab("# of Coastline Segments") +
     xlab("Vulnerability Index") +
     th.bar
@@ -323,27 +341,134 @@ output$hist2 <- renderPlot({
 L2 <- Leaflet$new()
 #L1$addAssets(jshead = "https://github.com/turban/Leaflet.Sync/blob/master/L.Map.Sync.js")
 L2$tileLayer("https://a.tiles.mapbox.com/v3/geointerest.map-dqz2pa8r/{z}/{x}/{y}.png")
-L2$set(width = 400, height = 400)  
+L2$set(width = 550, height = 450)  
+
+Difference <- reactive({
+  if (input$Difference == 0)
+    return(NULL)
+  if (is.null(input$fieldnames))
+    return(NULL)
+  isolate({
+    df.base <- loadTWO()[[1]]
+    df.scen <- loadTWO()[[2]]
+    diff <- df.scen[ ,input$fieldnames] - df.base[ ,input$fieldnames]
+  })
+  return(diff)
+})
 
 getCol2 <- reactive({
   if (input$Difference == 0)
     return(NULL)
   if (is.null(input$fieldnames))
     return(NULL)
+  if (input$Symbolize == 0)
+    return(NULL)
+  #print(input$Breaks3)
   
   #isolate({
   isolate({
-    df.base <- loadTWO()[[1]]
-    df.scen <- loadTWO()[[2]]
-    diff <- df.scen[ ,input$fieldnames] - df.base[ ,input$fieldnames]
+#     df.base <- loadTWO()[[1]]
+#     df.scen <- loadTWO()[[2]]
+#     diff <- df.scen[ ,input$fieldnames] - df.base[ ,input$fieldnames]
     #names(df.diff) <- input$fieldnames
-  })
+#  })
   #print(class(ce))
   #print(input$mapvar2)
-  cols <- brewer.pal(9, "RdBu")[as.numeric(cut(diff, breaks=c(-10,-1,-0.5,-0.1,0,0.1,0.5,1,10)))]
-  #print(head(cols))
+  diff <- Difference()
+  colbrks <- as.numeric(cut(diff, breaks=Breaks(), labels=F))
+  print("Diff info")
+  print(Breaks())
+  print(summary(diff))
+  cols <- brewer.pal(7, "RdBu")[colbrks]
+  print("cols info")
+  print(head(colbrks))
+  print(summary(colbrks))
+  print(head(cols))
+  print(length(cols))
   return(cols)
+  })
+})
+
+
+
+
+#quantile(Difference(), probs=seq(0,1,1/7))[1]
+observe({
+  if (input$Difference == 0){
+    return(NULL)
+  }
+  #print(sd(Difference()))
+  #isolate({
+    updateNumericInput(session,
+                    inputId = "Breaks.3",
+                    label = "-3",
+                    value = min(Difference())
+    )
+  updateNumericInput(session,
+                     inputId = "Breaks.2",
+                     label = "-2",
+                     value = round(as.numeric(sd(Difference())*-1), digits=3)
+  )
+  updateNumericInput(session,
+                     inputId = "Breaks.1",
+                     label = "-1",
+                     value = round(as.numeric(sd(Difference())*-0.5), digits=3)
+  )
+  updateNumericInput(session,
+                     inputId = "Breaks0",
+                     label = "0",
+                     value = 0
+  )
+  updateNumericInput(session,
+                     inputId = "Breaks1",
+                     label = "1",
+                     value = round(as.numeric(sd(Difference())*0.5), digits=3)
+  )
+  updateNumericInput(session,
+                     inputId = "Breaks2",
+                     label = "2",
+                     value = round(as.numeric(sd(Difference())*1), digits=3)
+  )
+  updateNumericInput(session,
+                     inputId = "Breaks3",
+                     label = "3",
+                     value = max(Difference())
+  )
   #})
+})
+
+Breaks <- reactive({
+  brk <- round(as.numeric(c(input$Breaks.3, input$Breaks.2, input$Breaks.1, input$Breaks0, input$Breaks1, input$Breaks2, input$Breaks3)), digits=3)
+  return(brk)
+})
+
+output$hist_diff <- renderPlot({
+  if (input$Difference == 0)
+    return(NULL)
+  if (input$Symbolize == 0)
+    return(NULL)
+  #print(input$Breaks3)
+  isolate({
+    #br <- round(br, digits=3)
+    print("Breaks again")
+    print(Breaks())
+    df <- data.frame(Difference())
+    names(df) <- "Delta"
+    brk <- Breaks()
+    
+    colscale <- cut(df$Delta, breaks=brk)
+    print(dim(df))
+    print(length(colscale))
+    df$cols <- colscale
+  gghist <- ggplot(df, aes(x=Delta)) +
+    geom_bar(aes(fill=cols), stat="bin", binwidth=0.01) +
+    scale_fill_brewer(palette="RdBu", type="div") +
+    geom_vline(data=data.frame(brk), xintercept=brk, linetype="dashed") +
+    scale_x_continuous(breaks=brk) +
+    #xlim(min(df), max(df)) +
+    th.hist  
+  })
+  print(gghist)
 })
 
 output$diffnames <- renderUI({
@@ -365,7 +490,7 @@ plotMap2 <- reactive({
   if (is.null(input$fieldnames))
     return(NULL)
   
-  isolate({
+  #isolate({
     df.base <- loadTWO()[[1]]
     df.scen <- loadTWO()[[2]]
     df.diff <- data.frame(df.scen[ ,input$fieldnames] - df.base[ ,input$fieldnames])
@@ -381,7 +506,7 @@ plotMap2 <- reactive({
     x$popup <- hwrite(mat)
     return(x)
   })
-  })
+  #})
   L2$setView(c(mean(df.diff$lat), mean(df.diff$lon)), 9)
   L2$geoJson(toGeoJSON(tmp.diff, lat='lat', lon='lon'), 
              onEachFeature = '#! function(feature, layer){
