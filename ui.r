@@ -112,18 +112,18 @@ shinyUI(#fluidPage(
                         ),
                         mainPanel(
                           uiOutput("diffnames"),
-                          mapOutput("Rleafmap2"),
-                          h5("Adjust colors"),
-                          p("Enter numbers to change the range of values assigned to each color. Use the histogram of values and the vertical dashed lines as a guide. Colors on the map will update accordingly."),
-                          textInputRow(inputId="Breaks.3", label="", value=-2, bgcol=brewer.pal(7, "RdBu")[1]),
-                          textInputRow(inputId="Breaks.2", label="", value=-0.5, brewer.pal(7, "RdBu")[2]),
-                          textInputRow(inputId="Breaks.1", label="", value=-0.05, brewer.pal(7, "RdBu")[3]),
-                          textInputRow(inputId="Breaks0", label="", value=0, brewer.pal(7, "RdBu")[4]),
-                          textInputRow(inputId="Breaks1", label="", value=0.05, brewer.pal(7, "RdBu")[5]),
-                          textInputRow(inputId="Breaks2", label="", value=0.5, brewer.pal(7, "RdBu")[6]),
-                          textInputRow(inputId="Breaks3", label="", value=2, brewer.pal(7, "RdBu")[7]),
-                          actionButton("Symbolize", "Symbolize"),
-                          plotOutput("hist_diff", width=600, height=200)
+                          mapOutput("Rleafmap2")
+#                           h5("Adjust colors"),
+#                           p("Enter numbers to change the range of values assigned to each color. Use the histogram of values and the vertical dashed lines as a guide."),
+#                           textInputRow(inputId="Breaks.3", label="", value=-2, bgcol=brewer.pal(7, "RdBu")[1]),
+#                           textInputRow(inputId="Breaks.2", label="", value=-0.5, brewer.pal(7, "RdBu")[2]),
+#                           textInputRow(inputId="Breaks.1", label="", value=-0.05, brewer.pal(7, "RdBu")[3]),
+#                           textInputRow(inputId="Breaks0", label="", value=0, brewer.pal(7, "RdBu")[4]),
+#                           textInputRow(inputId="Breaks1", label="", value=0.05, brewer.pal(7, "RdBu")[5]),
+#                           textInputRow(inputId="Breaks2", label="", value=0.5, brewer.pal(7, "RdBu")[6]),
+#                           textInputRow(inputId="Breaks3", label="", value=2, brewer.pal(7, "RdBu")[7]),
+#                           actionButton("Symbolize", "Symbolize"),
+#                           plotOutput("hist_diff", width=600, height=200)
                           #dataTableOutput("difftable")
                           
                         )

@@ -49,10 +49,10 @@ th.hist <- theme(panel.background = element_rect(fill="white"),
 
 
 print("start function")
-###### Server Function ##############
 
-## This silly little function gets called inside a reactive function
-## It's a hack to get a reactive function to take an argument
+
+## This function loads and processes the coastal_exposure.csv
+## Its called inside LoadONE() OR LoadTWO() - comparison
 LoadSpace <- function(inputX){
   ws <- inputX
   ce <- read.csv(file.path(ws, "outputs/coastal_exposure/coastal_exposure.csv"), header=T)
@@ -64,11 +64,10 @@ LoadSpace <- function(inputX){
   return(ce)
 }
 
-
-#dirnames <- list()
-
+###### Server Function ##############
 shinyServer(function(input, output, session) {
   
+  ## Browse to directory
   observe({ 
     if (input$ChooseDir == 0)
       return(NULL)
@@ -80,10 +79,7 @@ shinyServer(function(input, output, session) {
     })
   })
   
-#   output$sessname <- renderUI({
-#     selectInput("InVEST", "InVEST Workspace", output$session)
-#   })
-  
+  ## def function to upload results from dir
   loadONE <- reactive({ 
     if (input$upload == 0)
       return(NULL)
@@ -93,29 +89,30 @@ shinyServer(function(input, output, session) {
         return(ce)
     })
   })
-  
+
+## COMP: Browse to baseline directory 
 observe({ 
   if (input$ChooseBase == 0)
     return(NULL)
   
   dirname <- choose.dir()
-  #str(input$ChooseDir)
   isolate({
     updateTextInput("Baseline", "", value=dirname)
   })
 })
 
+## COMP: Browse to scenario directory 
 observe({ 
   if (input$ChooseScen == 0)
     return(NULL)
   
   dirname <- choose.dir()
-  #str(input$ChooseDir)
   isolate({
     updateTextInput("Scenario", "", value=dirname)
   })
 })
 
+## COMP: def function to upload both sets of results
   loadTWO <- reactive({
     if (input$Difference == 0)
       return(NULL)
@@ -126,7 +123,7 @@ observe({
     })
   })
   
-  
+  ## Read InVEST logfile.txt
   loadLOG <- reactive({
     if (input$upload == 0)
       return(NULL)
@@ -144,6 +141,7 @@ observe({
     
   })
   
+## Render the logfile on the 1st page
   output$config <- renderTable({
     if (input$upload == 0)
       return(NULL)
@@ -157,35 +155,15 @@ observe({
     })
   })
 
-#   output$leafmap <- renderUI({
-#     if (input$upload == 0)
-#       return(NULL)
-#     isolate({
-#       ce <- loadONE()
-#     })
-#     leafletMap(
-#       "map", "100%", 400,
-#       initialTileLayer = "https://a.tiles.mapbox.com/v3/geointerest.map-dqz2pa8r/{z}/{x}/{y}.png",
-#       initialTileLayerAttribution = HTML('OSM & Mapbox'),
-#       options=list(
-#         center = c(mean(ce$lat), mean(ce$lon)),
-#         zoom = 8,
-#         maxBounds = list(list(min(ce$lat)-1, min(ce$lon)-1), list(max(ce$lat)+1, max(ce$lon)+1))
-#       )
-#     )
-#   })
-
+## PLOT: set map layer input variable
+## requires uploading results with loadONE()
   observe({
     if (input$upload == 0)
       return(NULL)
     isolate({
       print("updating select")
       ce <- loadONE()
-      updateSelectInput(session, "mapvar",
-                            label = "Map Layer",
-                            choices = names(ce),
-                            selected = "coastal_exposure"
-                          )
+
       updateSelectInput(session, "mapvar2",
                         label = "Map Layer",
                         choices = names(ce),
@@ -194,27 +172,25 @@ observe({
     })
   })
   
-  ##### Leaflet-Shiny Map ######
   
-#   map <- createLeafletMap(session, 'map')
   
-
-  pointsInBounds <- reactive({
-#     validate(
-#       need(input$InVEST != "", "Please select an InVEST workspace")
-#     )
-   if (is.null(input$map_bounds))
-     return(loadONE())
-    bounds <- input$map_bounds
-    latRng <- range(bounds$north, bounds$south)
-    lngRng <- range(bounds$east, bounds$west)
-    
-    subset(loadONE(),
-           lat >= latRng[1] & lat <= latRng[2] &
-             lon >= lngRng[1] & lon <= lngRng[2])
-  })
+#   pointsInBounds <- reactive({
+# #     validate(
+# #       need(input$InVEST != "", "Please select an InVEST workspace")
+# #     )
+#    if (is.null(input$map_bounds))
+#      return(loadONE())
+#     bounds <- input$map_bounds
+#     latRng <- range(bounds$north, bounds$south)
+#     lngRng <- range(bounds$east, bounds$west)
+#     
+#     subset(loadONE(),
+#            lat >= latRng[1] & lat <= latRng[2] &
+#              lon >= lngRng[1] & lon <= lngRng[2])
+#   })
   
-  ## use the selected input variable to apply a color pallette
+  ## PLoT: def function to apply a color pallette to map variable
+  ## requires uploading with loadONE()
   getCol <- reactive({
     if (input$upload == 0)
       return(NULL)
@@ -232,50 +208,14 @@ observe({
   })
 
 
-#   observe({
-#     if (input$upload == 0)
-#       return(NULL)
-#     
-#     ce <- loadONE()
-#     ce$col <- getCol()
-#     #print(head(ce$col))
-#     #pts <- pointsInBounds()
-#     #print(dim(pts))
-#     map$addCircle(
-#       ce$lat,
-#       ce$lon,
-#       700/(input$map_zoom^1.3),
-#       row.names(ce),
-#       list(fill=TRUE, fillOpacity=1, stroke=F, fillColor=ce$col)
-#     )
-#   })
-
-
-# observe({
-# 
-#   if (input$upload == 0)
-#     return(NULL)
-#   
-#   event <- input$map_shape_click
-#   if (is.null(event))
-#     return()
-#   map$clearPopups()
-#   
-#   isolate({
-#     ce <- loadONE()
-#     #cities <- topCitiesInBounds()
-#     coast <- ce[row.names(ce) == event$id,]
-#     #selectedcoast <<- coast
-#     content <- print.xtable(xtable(t(coast[c(1,2,7:ncol(coast))])), type="html")
-#     map$showPopup(event$lat, event$lng, content, event$id)
-#   })
-# })
-
+## Initialize first Leaflet Map
   L1 <- Leaflet$new()
   #L1$addAssets(jshead = "https://github.com/turban/Leaflet.Sync/blob/master/L.Map.Sync.js")
   L1$tileLayer("https://a.tiles.mapbox.com/v3/geointerest.map-dqz2pa8r/{z}/{x}/{y}.png")
   L1$set(width = 550, height = 400)
 
+## PLOT: def function to add points and set view of leaflet
+## calls to loadONE(), getCol()
 plotMap <- reactive({
 
     if (input$upload == 0)
@@ -308,7 +248,7 @@ plotMap <- reactive({
   return(L1)
 })
 
-
+## PLOT: render 1st Leaflet
 output$Rleafmap <- renderMap({
     if (input$upload == 0)
       return(NULL)
@@ -316,18 +256,13 @@ output$Rleafmap <- renderMap({
 })
 
 
-
-
-
-#print(res())
+## PLOT: render array of histograms
 output$hist2 <- renderPlot({
-  pts <- pointsInBounds()
+  #pts <- pointsInBounds()
   pts <- pts[,7:ncol(pts)]
   plotpts <- melt(pts)
-  #pt2km <- Res()
   gg.hist <- ggplot(plotpts) + 
     geom_bar(aes(x=value, y=..count.., fill=cut(value, c(0,1,2,3,4,5), include.lowest=T)), binwidth=.5, color="white") +
-    #geom_histogram(aes(x=value, color="white", fill=cut(value, c(0,1,2,3,4,5))), binwidth=.5) +
     facet_wrap("variable", nrow=ceiling(sqrt(ncol(pts))), ncol=ceiling(sqrt(ncol(pts)))) +
     scale_fill_brewer(palette="YlOrRd", type="qual") +
     scale_x_continuous(breaks=c(0:5)) +
@@ -338,11 +273,16 @@ output$hist2 <- renderPlot({
   print(gg.hist)
 })
 
+## COMP: 
+## Initialize 2nd leaflet map
 L2 <- Leaflet$new()
 #L1$addAssets(jshead = "https://github.com/turban/Leaflet.Sync/blob/master/L.Map.Sync.js")
 L2$tileLayer("https://a.tiles.mapbox.com/v3/geointerest.map-dqz2pa8r/{z}/{x}/{y}.png")
 L2$set(width = 550, height = 450)  
 
+## COMP:
+## def function that differences values in 2 scenarios
+## requires upload with loadTWO()
 Difference <- reactive({
   if (input$Difference == 0)
     return(NULL)
@@ -352,152 +292,153 @@ Difference <- reactive({
     df.base <- loadTWO()[[1]]
     df.scen <- loadTWO()[[2]]
     diff <- df.scen[ ,input$fieldnames] - df.base[ ,input$fieldnames]
+    diff <- cbind(df.base[,c("lat", "lon")], diff)
+    names(diff) <- c("lat", "lon", "delta")
   })
   return(diff)
 })
 
+## COMP:
+## def function for assigning color to map variable, which is the differenced value
+## calls Difference(), Breaks() 
 getCol2 <- reactive({
   if (input$Difference == 0)
     return(NULL)
   if (is.null(input$fieldnames))
     return(NULL)
-  if (input$Symbolize == 0)
-    return(NULL)
+  #print(input$Symbolize)
   #print(input$Breaks3)
   
   #isolate({
   isolate({
-#     df.base <- loadTWO()[[1]]
-#     df.scen <- loadTWO()[[2]]
-#     diff <- df.scen[ ,input$fieldnames] - df.base[ ,input$fieldnames]
-    #names(df.diff) <- input$fieldnames
-#  })
-  #print(class(ce))
-  #print(input$mapvar2)
   diff <- Difference()
-  colbrks <- as.numeric(cut(diff, breaks=Breaks(), labels=F))
+  #colbrks <- as.numeric(cut(diff$delta, breaks=Breaks(), labels=F))
+  colbrks <- as.numeric(cut(diff$delta, breaks=c(-10, -0.0001, 0.0001, 10), labels=F))
+  })
   print("Diff info")
-  print(Breaks())
-  print(summary(diff))
-  cols <- brewer.pal(7, "RdBu")[colbrks]
+  #print(Breaks())
+  print(summary(diff$delta))
+  #cols <- brewer.pal(3, "RdBu")[colbrks]
+  cols <- c(rgb(1,0,0), rgb(1,1,1), rgb(0,0,1))[colbrks]
   print("cols info")
   print(head(colbrks))
   print(summary(colbrks))
   print(head(cols))
   print(length(cols))
   return(cols)
-  })
-})
-
-
-
-
-#quantile(Difference(), probs=seq(0,1,1/7))[1]
-observe({
-  if (input$Difference == 0){
-    return(NULL)
-  }
-  #print(sd(Difference()))
-  #isolate({
-    updateNumericInput(session,
-                    inputId = "Breaks.3",
-                    label = "-3",
-                    value = min(Difference())
-    )
-  updateNumericInput(session,
-                     inputId = "Breaks.2",
-                     label = "-2",
-                     value = round(as.numeric(sd(Difference())*-1), digits=3)
-  )
-  updateNumericInput(session,
-                     inputId = "Breaks.1",
-                     label = "-1",
-                     value = round(as.numeric(sd(Difference())*-0.5), digits=3)
-  )
-  updateNumericInput(session,
-                     inputId = "Breaks0",
-                     label = "0",
-                     value = 0
-  )
-  updateNumericInput(session,
-                     inputId = "Breaks1",
-                     label = "1",
-                     value = round(as.numeric(sd(Difference())*0.5), digits=3)
-  )
-  updateNumericInput(session,
-                     inputId = "Breaks2",
-                     label = "2",
-                     value = round(as.numeric(sd(Difference())*1), digits=3)
-  )
-  updateNumericInput(session,
-                     inputId = "Breaks3",
-                     label = "3",
-                     value = max(Difference())
-  )
   #})
 })
 
-Breaks <- reactive({
-  brk <- round(as.numeric(c(input$Breaks.3, input$Breaks.2, input$Breaks.1, input$Breaks0, input$Breaks1, input$Breaks2, input$Breaks3)), digits=3)
-  return(brk)
-})
 
-output$hist_diff <- renderPlot({
-  if (input$Difference == 0)
-    return(NULL)
-  if (input$Symbolize == 0)
-    return(NULL)
-  #print(input$Breaks3)
-  isolate({
-    #br <- round(br, digits=3)
-    print("Breaks again")
-    print(Breaks())
-    df <- data.frame(Difference())
-    names(df) <- "Delta"
-    brk <- Breaks()
-    
-    colscale <- cut(df$Delta, breaks=brk)
-    print(dim(df))
-    print(length(colscale))
-    df$cols <- colscale
-  gghist <- ggplot(df, aes(x=Delta)) +
-    geom_bar(aes(fill=cols), stat="bin", binwidth=0.01) +
-    scale_fill_brewer(palette="RdBu", type="div") +
-    geom_vline(data=data.frame(brk), xintercept=brk, linetype="dashed") +
-    scale_x_continuous(breaks=brk) +
-    #xlim(min(df), max(df)) +
-    th.hist  
-  })
-  print(gghist)
-})
+## COMP: 
+## updates Input fields for color breaks based on distribution of differenced values
+## calls Difference()
+# observe({
+#   if (input$Difference == 0){
+#     return(NULL)
+#   }
+#   #print(sd(Difference()))
+#   #isolate({
+#   diff <- Difference()
+#     updateNumericInput(session,
+#                     inputId = "Breaks.3",
+#                     label = "",
+#                     value = min(diff$delta)
+#     )
+#   updateNumericInput(session,
+#                      inputId = "Breaks.2",
+#                      label = "",
+#                      value = round(as.numeric(sd(diff$delta)*-1), digits=3)
+#   )
+#   updateNumericInput(session,
+#                      inputId = "Breaks.1",
+#                      label = "",
+#                      value = round(as.numeric(sd(diff$delta)*-0.5), digits=3)
+#   )
+#   updateNumericInput(session,
+#                      inputId = "Breaks0",
+#                      label = "",
+#                      value = 0
+#   )
+#   updateNumericInput(session,
+#                      inputId = "Breaks1",
+#                      label = "",
+#                      value = round(as.numeric(sd(diff$delta)*0.5), digits=3)
+#   )
+#   updateNumericInput(session,
+#                      inputId = "Breaks2",
+#                      label = "",
+#                      value = round(as.numeric(sd(diff$delta)*1), digits=3)
+#   )
+#   updateNumericInput(session,
+#                      inputId = "Breaks3",
+#                      label = "",
+#                      value = max(diff$delta)
+#   )
+#   #})
+# })
 
-output$diffnames <- renderUI({
-    if (input$Difference == 0)
-      return(NULL)
-    isolate({
-      df.base <- loadTWO()[[1]]
-      df.scen <- loadTWO()[[2]]
-    })
-    selectInput("fieldnames", 
-                 label="Select values to compare", 
-                 choices=intersect(names(df.base)[-6:-1], names(df.scen)),
-                 selected = "coastal_exposure")
-  })
+## COMP:
+## def function which concatentates input$breaks values
+# Breaks <- reactive({
+#   print(input$Symbolize)
+#   if (input$Difference == 0)
+#     return(NULL)
+#   isolate({
+#     brk <- round(as.numeric(c(input$Breaks.3, input$Breaks.2, input$Breaks.1, input$Breaks0, input$Breaks1, input$Breaks2, input$Breaks3)), digits=3)
+#     return(brk)
+#   })
+# })
 
+## COMP:
+## render a histogram of differenced values
+## calls Difference(), Breaks()
+# output$hist_diff <- renderPlot({
+#   if (input$Difference == 0)
+#     return(NULL)
+#   #if (input$Symbolize < 0)
+#   #  return(NULL)
+#   #print(input$Breaks3)
+#   #isolate({
+#     print("Breaks again")
+#     print(input$Symbolize)
+#     print(Breaks())
+#     diff <- Difference()
+#     #names(df) <- "Delta"
+#     brk <- Breaks()
+#     
+#     colscale <- cut(diff$delta, breaks=brk)
+#     print(dim(diff))
+#     print(length(colscale))
+#     diff$cols <- colscale
+#   gghist <- ggplot(diff, aes(x=delta)) +
+#     geom_bar(aes(fill=cols), stat="bin", binwidth=0.01) +
+#     scale_fill_brewer(palette="RdBu", type="div") +
+#     geom_vline(data=data.frame(brk), xintercept=brk, linetype="dashed") +
+#     scale_x_continuous(breaks=brk) +
+#     #xlim(min(df), max(df)) +
+#     th.hist  
+#   #})
+#   print(gghist)
+# })
+
+
+## COMP:
+## def function to add points to comparison map
+## calss to getCol2(), 
 plotMap2 <- reactive({
   if (input$Difference == 0)
     return(NULL)
   if (is.null(input$fieldnames))
     return(NULL)
-  
+  print(input$Symbolize)
   #isolate({
-    df.base <- loadTWO()[[1]]
-    df.scen <- loadTWO()[[2]]
-    df.diff <- data.frame(df.scen[ ,input$fieldnames] - df.base[ ,input$fieldnames])
-    names(df.diff) <- input$fieldnames
-    #print(class(df.diff))
-    #print(names(df.diff))
-    df.diff <- cbind(df.base[,c("lat", "lon")], df.diff)
+#     df.base <- loadTWO()[[1]]
+#     df.scen <- loadTWO()[[2]]
+#     df.diff <- data.frame(df.scen[ ,input$fieldnames] - df.base[ ,input$fieldnames])
+#     names(df.diff) <- input$fieldnames
+#     df.diff <- cbind(df.base[,c("lat", "lon")], df.diff)
+  df.diff <- Difference()
   df.diff$col <- getCol2()
   tmp.diff <- apply(df.diff, 1, as.list)
   tmp.diff <- lapply(tmp.diff, function(x){
@@ -514,11 +455,11 @@ plotMap2 <- reactive({
 } !#',
              pointToLayer =  "#! function(feature, latlng){
              return L.circleMarker(latlng, {
-             radius: 4,
+             radius: feature.properties.delta*20,
              fillColor: feature.properties.col || 'white',    
              color: '#000',
              weight: 1,
-             fillOpacity: 0.8
+             fillOpacity: 0.65
              })
 } !#")
   L2$enablePopover(TRUE)
@@ -526,6 +467,21 @@ plotMap2 <- reactive({
   })
 
 
+## COMP:
+## Select boxes with variables common to both scenarios. Used to build a table.
+## requires uploading results with loadTWO()
+output$diffnames <- renderUI({
+  if (input$Difference == 0)
+    return(NULL)
+  isolate({
+    df.base <- loadTWO()[[1]]
+    df.scen <- loadTWO()[[2]]
+  })
+  selectInput("fieldnames", 
+              label="Select values to compare", 
+              choices=intersect(names(df.base)[-6:-1], names(df.scen)),
+              selected = "coastal_exposure")
+})
   
   output$difftable <- renderDataTable({
     if (input$diffcalc == 0)
