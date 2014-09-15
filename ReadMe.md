@@ -6,20 +6,20 @@ To run the Coastal Vulnerability Output Viewer, first you must install the R sof
 
 #### Install R:
 
-R installs much like any other software you have installed.
-
 http://www.cran.r-project.org/mirrors.html
 
-
+Use this link to choose a location from which to download, then select the installer for your particular operating system. 
 
 
 #### Install R Packages: 
 
 
-After R is installed, open the application, copy & paste the following line into the R console, and press enter.
+After R is installed, open it, copy & paste the following lines into the R console, and press enter.
 
 ```r
-install.packages(c("shiny", "rCharts", "leaflet", "reshape2", "ggplot2")
+install.packages(c("shiny", "leaflet", "reshape2", "ggplot2", "devtools"))
+library(devtools)
+install_github('rCharts', 'ramnathv')
 ```
 
 
