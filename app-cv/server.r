@@ -1,16 +1,9 @@
 library(shiny)
-# library(rgdal)
-# library(sp)
-# library(RColorBrewer)
 library(ggplot2)
-# library(plyr)
-# library(rgeos)
-# library(raster)
 library(reshape2)
 library(leaflet)
 library(rCharts)
-# library(xtable)
-# library(hwriter)
+
 
 
 

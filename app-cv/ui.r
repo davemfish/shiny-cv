@@ -1,15 +1,12 @@
 library(shiny)
-# library(leaflet)
-# library(rCharts)
-# library(xtable)
-# library(RColorBrewer)
 
-
-textInputRow <- function (inputId, label, value = "", bgcol="red") {
-  div(style=paste("display:inline-block; background-color:", bgcol, sep=""),
-      tags$label(label, `for` = inputId), 
-      tags$input(id = inputId, type = "text", value = value,class="input-mini"))
-}
+# 
+# 
+# textInputRow <- function (inputId, label, value = "", bgcol="red") {
+#   div(style=paste("display:inline-block; background-color:", bgcol, sep=""),
+#       tags$label(label, `for` = inputId), 
+#       tags$input(id = inputId, type = "text", value = value,class="input-mini"))
+# }
 
 # Define UI 
 shinyUI(#fluidPage(
