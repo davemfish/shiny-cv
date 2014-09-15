@@ -4,6 +4,8 @@ library(reshape2)
 library(rCharts)
 library(rgdal)
 library(raster)
+library(RColorBrewer)
+library(hwriter)
 
 
 
