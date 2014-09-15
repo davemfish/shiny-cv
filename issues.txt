@@ -1,0 +1,19 @@
+ISSUES:
+
+
+deal with multiple logfiles in a single workspace, since they don't overwrite each other.
+
+build list of InVEST workspaces
+
+*ggplot update, substitute rcharts?
+
+'additional layer' having negative values in csv
+
+*Add original and difference vals to popup on comparison
+
+*remove popup except on points
+
+**Validate that runs are comparable (same # of points should do it)
+
+* Rebuild and Export differences table
+

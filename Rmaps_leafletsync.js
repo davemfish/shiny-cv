@@ -26,25 +26,24 @@ binding.renderValue = function(el, data) {
   // need to initialize the nvd3 line chart and d3 selection. We'll
   // store these on $el as a data value called "state".
   if (!$el.data("state")) {
-    var chart = nv.models.lineChart()
-      .margin({left: 100})
-      .useInteractiveGuideline(true)
-      .transitionDuration(350)
-      .showLegend(true)
-      .showYAxis(true)
-      .showXAxis(true);
-      
-    chart.xAxis     //Chart x-axis settings
-      .axisLabel('Time (ms)')
-      .tickFormat(d3.format(',r'));
- 
-    chart.yAxis     //Chart y-axis settings
-      .axisLabel('Voltage (v)')
-      .tickFormat(d3.format('.02f'));
+    var layer1 = L.tileLayer('http://otile1.mqcdn.com/tiles/1.0.0/sat/{z}/{x}/{y}.jpg');
+    var layer2 = L.tileLayer('http://otile1.mqcdn.com/tiles/1.0.0/sat/{z}/{x}/{y}.jpg');
 
-    nv.utils.windowResize(chart.update);
-    
-    var selection = d3.select(el).select("svg");
+    var map1 = L.map('map1', {
+      layers: [layer1],
+      center: [49, -123],
+      zoom: 7
+    });
+
+    var map2 = L.map('map2', {
+      layers: [layer1],
+      center: [49, -123],
+      zoom: 7,
+      zoomControl: false
+    });
+
+    map1.sync(map2);
+    map2.sync(map1);
     
     // Store the chart object on el so we can get it next time
     $el.data("state", {
@@ -58,7 +57,7 @@ binding.renderValue = function(el, data) {
   // Retrieve the chart and selection we created earlier
   var state = $el.data("state");
   
-  // Schedule some work with nvd3
+  /*// Schedule some work with nvd3
   nv.addGraph(function() {
     // Update the chart
     state.selection
@@ -66,7 +65,7 @@ binding.renderValue = function(el, data) {
       .transition(500)
       .call(state.chart);
     return state.chart;
-  });
+  });*/
 };
 
 // Tell Shiny about our new output binding
