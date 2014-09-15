@@ -99,7 +99,7 @@ observe({
   
   dirname <- choose.dir()
   isolate({
-    updateTextInput("Baseline", "", value=dirname)
+    updateTextInput(session, "Baseline", "", value=dirname)
   })
 })
 
@@ -110,7 +110,7 @@ observe({
   
   dirname <- choose.dir()
   isolate({
-    updateTextInput("Scenario", "", value=dirname)
+    updateTextInput(session, "Scenario", "", value=dirname)
   })
 })
 
@@ -143,7 +143,7 @@ observe({
     
   })
   
-## Render the logfile on the 1st page
+## Render the logfile on the About page
   output$config <- renderTable({
     if (input$upload == 0)
       return(NULL)
@@ -372,20 +372,20 @@ output$diffnames <- renderUI({
               selected = "coastal_exposure")
 })
   
-  output$difftable <- renderDataTable({
-    if (input$diffcalc == 0)
-      return(NULL)
-    isolate({
-      df.base <- loadTWO()[[1]]
-      df.scen <- loadTWO()[[2]]
-      df.diff <- data.frame(df.scen[ ,input$fieldnames] - df.base[ ,input$fieldnames])
-      names(df.diff) <- input$fieldnames
-      print(class(df.diff))
-      print(names(df.diff))
-      df.diff <- cbind(df.base[,c("lat", "lon")], df.diff)
-    })
-    return(df.diff)
-  })
+#   output$difftable <- renderDataTable({
+#     if (input$diffcalc == 0)
+#       return(NULL)
+#     isolate({
+#       df.base <- loadTWO()[[1]]
+#       df.scen <- loadTWO()[[2]]
+#       df.diff <- data.frame(df.scen[ ,input$fieldnames] - df.base[ ,input$fieldnames])
+#       names(df.diff) <- input$fieldnames
+#       print(class(df.diff))
+#       print(names(df.diff))
+#       df.diff <- cbind(df.base[,c("lat", "lon")], df.diff)
+#     })
+#     return(df.diff)
+#   })
 
 output$Rleafmap2 <- renderMap({
   if (input$Difference == 0){
