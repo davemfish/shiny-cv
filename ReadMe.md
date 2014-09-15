@@ -17,7 +17,7 @@ Use this link to choose a location from which to download, then select the insta
 After R is installed, open it, copy & paste the following lines into the R console, and press enter.
 
 ```r
-install.packages(c("shiny", "leaflet", "reshape2", "ggplot2", "devtools"))
+install.packages(c("shiny", "reshape2", "ggplot2", "devtools", "rgdal", "hwriter", "RColorBrewer", "raster"))
 library(devtools)
 install_github('rCharts', 'ramnathv')
 ```
