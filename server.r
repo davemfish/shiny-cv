@@ -64,6 +64,11 @@ LoadSpace <- function(inputX){
   return(ce)
 }
 
+L0 <- Leaflet$new()
+L0$tileLayer("https://a.tiles.mapbox.com/v3/geointerest.map-dqz2pa8r/{z}/{x}/{y}.png")
+L0$setView(c(0, 0), 1)  
+L0$set(width = 550, height = 400)
+
 ###### Server Function ##############
 shinyServer(function(input, output, session) {
   
@@ -209,10 +214,10 @@ observe({
 
 
 ## Initialize first Leaflet Map
-  L1 <- Leaflet$new()
-  #L1$addAssets(jshead = "https://github.com/turban/Leaflet.Sync/blob/master/L.Map.Sync.js")
-  L1$tileLayer("https://a.tiles.mapbox.com/v3/geointerest.map-dqz2pa8r/{z}/{x}/{y}.png")
-  L1$set(width = 550, height = 400)
+L1 <- Leaflet$new()
+#L1$addAssets(jshead = "https://github.com/turban/Leaflet.Sync/blob/master/L.Map.Sync.js")
+L1$tileLayer("https://a.tiles.mapbox.com/v3/geointerest.map-dqz2pa8r/{z}/{x}/{y}.png")
+L1$set(width = 550, height = 400)
 
 ## PLOT: def function to add points and set view of leaflet
 ## calls to loadONE(), getCol()
@@ -251,15 +256,18 @@ plotMap <- reactive({
 ## PLOT: render 1st Leaflet
 output$Rleafmap <- renderMap({
     if (input$upload == 0)
-      return(NULL)
+      return(L0)
     plotMap()
 })
 
 
 ## PLOT: render array of histograms
 output$hist2 <- renderPlot({
-  #pts <- pointsInBounds()
-  pts <- pts[,7:ncol(pts)]
+  if (input$upload == 0){
+    return(NULL)
+  }
+  ce <- loadONE()
+  pts <- ce[,7:ncol(ce)]
   plotpts <- melt(pts)
   gg.hist <- ggplot(plotpts) + 
     geom_bar(aes(x=value, y=..count.., fill=cut(value, c(0,1,2,3,4,5), include.lowest=T)), binwidth=.5, color="white") +
@@ -312,14 +320,12 @@ getCol2 <- reactive({
   #isolate({
   isolate({
   diff <- Difference()
-  #colbrks <- as.numeric(cut(diff$delta, breaks=Breaks(), labels=F))
   colbrks <- as.numeric(cut(diff$delta, breaks=c(-10, -0.0001, 0.0001, 10), labels=F))
   })
   print("Diff info")
   #print(Breaks())
   print(summary(diff$delta))
-  #cols <- brewer.pal(3, "RdBu")[colbrks]
-  cols <- c(rgb(1,0,0), rgb(1,1,1), rgb(0,0,1))[colbrks]
+  cols <- c(rgb(0,0,1), rgb(1,1,1), rgb(1,0,0))[colbrks]
   print("cols info")
   print(head(colbrks))
   print(summary(colbrks))
@@ -330,97 +336,6 @@ getCol2 <- reactive({
 })
 
 
-## COMP: 
-## updates Input fields for color breaks based on distribution of differenced values
-## calls Difference()
-# observe({
-#   if (input$Difference == 0){
-#     return(NULL)
-#   }
-#   #print(sd(Difference()))
-#   #isolate({
-#   diff <- Difference()
-#     updateNumericInput(session,
-#                     inputId = "Breaks.3",
-#                     label = "",
-#                     value = min(diff$delta)
-#     )
-#   updateNumericInput(session,
-#                      inputId = "Breaks.2",
-#                      label = "",
-#                      value = round(as.numeric(sd(diff$delta)*-1), digits=3)
-#   )
-#   updateNumericInput(session,
-#                      inputId = "Breaks.1",
-#                      label = "",
-#                      value = round(as.numeric(sd(diff$delta)*-0.5), digits=3)
-#   )
-#   updateNumericInput(session,
-#                      inputId = "Breaks0",
-#                      label = "",
-#                      value = 0
-#   )
-#   updateNumericInput(session,
-#                      inputId = "Breaks1",
-#                      label = "",
-#                      value = round(as.numeric(sd(diff$delta)*0.5), digits=3)
-#   )
-#   updateNumericInput(session,
-#                      inputId = "Breaks2",
-#                      label = "",
-#                      value = round(as.numeric(sd(diff$delta)*1), digits=3)
-#   )
-#   updateNumericInput(session,
-#                      inputId = "Breaks3",
-#                      label = "",
-#                      value = max(diff$delta)
-#   )
-#   #})
-# })
-
-## COMP:
-## def function which concatentates input$breaks values
-# Breaks <- reactive({
-#   print(input$Symbolize)
-#   if (input$Difference == 0)
-#     return(NULL)
-#   isolate({
-#     brk <- round(as.numeric(c(input$Breaks.3, input$Breaks.2, input$Breaks.1, input$Breaks0, input$Breaks1, input$Breaks2, input$Breaks3)), digits=3)
-#     return(brk)
-#   })
-# })
-
-## COMP:
-## render a histogram of differenced values
-## calls Difference(), Breaks()
-# output$hist_diff <- renderPlot({
-#   if (input$Difference == 0)
-#     return(NULL)
-#   #if (input$Symbolize < 0)
-#   #  return(NULL)
-#   #print(input$Breaks3)
-#   #isolate({
-#     print("Breaks again")
-#     print(input$Symbolize)
-#     print(Breaks())
-#     diff <- Difference()
-#     #names(df) <- "Delta"
-#     brk <- Breaks()
-#     
-#     colscale <- cut(diff$delta, breaks=brk)
-#     print(dim(diff))
-#     print(length(colscale))
-#     diff$cols <- colscale
-#   gghist <- ggplot(diff, aes(x=delta)) +
-#     geom_bar(aes(fill=cols), stat="bin", binwidth=0.01) +
-#     scale_fill_brewer(palette="RdBu", type="div") +
-#     geom_vline(data=data.frame(brk), xintercept=brk, linetype="dashed") +
-#     scale_x_continuous(breaks=brk) +
-#     #xlim(min(df), max(df)) +
-#     th.hist  
-#   #})
-#   print(gghist)
-# })
 
 
 ## COMP:
@@ -429,9 +344,9 @@ getCol2 <- reactive({
 plotMap2 <- reactive({
   if (input$Difference == 0)
     return(NULL)
-  if (is.null(input$fieldnames))
-    return(NULL)
-  print(input$Symbolize)
+#   if (is.null(input$fieldnames))
+#     return(NULL)
+#  print(input$Symbolize)
   #isolate({
 #     df.base <- loadTWO()[[1]]
 #     df.scen <- loadTWO()[[2]]
@@ -499,8 +414,12 @@ output$diffnames <- renderUI({
   })
 
 output$Rleafmap2 <- renderMap({
-  if (is.null(input$fieldnames))
-    return(NULL)
+  if (input$Difference == 0){
+    L0 <- Leaflet$new()
+    L0$tileLayer("https://a.tiles.mapbox.com/v3/geointerest.map-dqz2pa8r/{z}/{x}/{y}.png")
+    L0$setView(c(0, 0), 1)  
+    return(L0)
+  }
   plotMap2()
 })
   

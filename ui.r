@@ -20,7 +20,7 @@ shinyUI(#fluidPage(
                       sidebarLayout(
                         sidebarPanel(
                                      #selectInput("InVEST", label="Choose InVEST workspace", choices=getdir(), selected=NULL),
-                                     h4("1) Select an InVEST run to visualize"),
+                                     h4("Select an InVEST run to visualize"),
                                      p("Browse to the directory you defined as your workspace when you ran the InVEST model. 
                                        Your workspace contains these 3 subfolders:"),
                                      p("     'intermediate'"),
@@ -29,53 +29,23 @@ shinyUI(#fluidPage(
                                      textInput("InVEST", "", "Enter Workspace Path"),
                                      actionButton("ChooseDir", "Browse"),
                                      tags$br(),
-                                     tags$br(),
-                                     h4("2) Upload InVEST results"),
-                                     actionButton("upload", "Upload Results"),
-                                     h4("3) Explore your results"),
-                                     p("After clicking 'Upload Results', information about the parameters of your InVEST run will appear on this page.
-                                       Results are visualized on the other tabs at the top. To visualize a different InVEST output, 
-                                       return to this tab, browse to a new worksapce, and click upload again.")
+                                     actionButton("upload", strong('Upload Results')),
+                                     p(tags$small(em("(this may take a moment)"))),
+                                     br(),
+                                     h4("Explore your results"),
+                                     p("After clicking 'Upload Results', information about the parameters of your InVEST run will appear on the 'About' tab.
+                                       To visualize a different InVEST run, browse to a different workspace, and click 'Upload' again. 
+                                       To compare results from two model runs, use the 'Compare Scenarios' tab.")
                         ),
                         mainPanel(
-                                  h3("Current InVEST Configuration"),
-                                  h4(textOutput("directory")),
-                                  tableOutput("config")
-                                  #p("This is information from the logfile produced by the InVEST model run")
-
+                          selectInput("mapvar2", label="Map Layer", choices=NULL),
+                          mapOutput("Rleafmap"),
+                          h5(""),
+                          br(),
+                          plotOutput("hist2")
                         )
                         )
                       ),
-                          
-#              tabPanel("Plots",
-#                       fluidRow(
-#                         column(6,
-#                                selectInput("mapvar", label="Map Layer", choices=NULL),
-#                                uiOutput("leafmap")
-#                         ),
-#                         
-#                         column(6,
-#                                h5("The histograms display only the points within the current map view"),
-#                                br(),
-#                                plotOutput("hist")
-#                         )
-#                       )
-#              ),
-             tabPanel("Plots",
-                      fluidRow(
-                        column(6,
-                               selectInput("mapvar2", label="Map Layer", choices=NULL),
-                               mapOutput("Rleafmap")
-                        ),
-                        
-                         column(6,
-                                h5(""),
-                                br(),
-                                plotOutput("hist2")
-                         )
-                      )
-             ),
-
              
              tabPanel("Tables", 
                       sidebarLayout(
@@ -95,16 +65,18 @@ shinyUI(#fluidPage(
                             For example, you can visualize the differences between a baseline scenario and an additional scenario."),
                           
                           tags$br(),
-                          
+                          h5("Baseline"),
                           textInput("Baseline", "", "Baseline workspace"),
                           actionButton("ChooseBase", "Browse"),
                           tags$br(),
                           tags$br(),
+                          h5("Scenario"),
                           textInput("Scenario", "", "Scenario workspace"),
                           actionButton("ChooseScen", "Browse"),
                           tags$br(),
                           tags$br(),
-                          actionButton("Difference", "Compare Results"),
+                          actionButton("Difference", strong("Compare Results")),
+                          p(tags$small(em("(this may take a moment)"))),
                     
                           p("After clicking 'Compare Results', values at each coastal segment 
                             of the 'Baseline' workspace are subtracted from corresponding values 
@@ -112,48 +84,20 @@ shinyUI(#fluidPage(
                         ),
                         mainPanel(
                           uiOutput("diffnames"),
-                          mapOutput("Rleafmap2")
-#                           h5("Adjust colors"),
-#                           p("Enter numbers to change the range of values assigned to each color. Use the histogram of values and the vertical dashed lines as a guide."),
-#                           textInputRow(inputId="Breaks.3", label="", value=-2, bgcol=brewer.pal(7, "RdBu")[1]),
-#                           textInputRow(inputId="Breaks.2", label="", value=-0.5, brewer.pal(7, "RdBu")[2]),
-#                           textInputRow(inputId="Breaks.1", label="", value=-0.05, brewer.pal(7, "RdBu")[3]),
-#                           textInputRow(inputId="Breaks0", label="", value=0, brewer.pal(7, "RdBu")[4]),
-#                           textInputRow(inputId="Breaks1", label="", value=0.05, brewer.pal(7, "RdBu")[5]),
-#                           textInputRow(inputId="Breaks2", label="", value=0.5, brewer.pal(7, "RdBu")[6]),
-#                           textInputRow(inputId="Breaks3", label="", value=2, brewer.pal(7, "RdBu")[7]),
-#                           actionButton("Symbolize", "Symbolize"),
-#                           plotOutput("hist_diff", width=600, height=200)
-                          #dataTableOutput("difftable")
+                          mapOutput("Rleafmap2"),
+                          p(strong("BLUE"), "represents a", strong("less vulnerable"), "coastline under the scenario, compared to the baseline."),
+                          p(strong('RED'), "represents a", strong("more vulnerable"), "coastline under the scenario, compared to the baseline."),
+                          p("Size of the dot represents the magnitude of change.  No dot appears where there is no change.")
                           
                         )
                       )
              ),
-#              tabPanel("Compare Maps",
-# #                       sidebarLayout(
-# #                         sidebarPanel(
-# #                           selectInput("Baseline", label="Choose Baseline Results", choices=getdir(), selected=NULL),
-# #                           selectInput("Scenario", label="Choose Scenario Results", choices=getdir(), selected=NULL),
-# #                           actionButton("Difference", "Upload Results"),
-# #                           tags$br(),
-# #                           tags$br(),
-# #                           uiOutput("diffnames"),
-# #                           tags$br(),
-# #                           actionButton("diffcalc", "Calculate Differences")
-# #                         ),
-#                         mainPanel("main",
-#                           uiOutput("mapcompare")
-#                         )
-#                       #)
-#              ),
-             tabPanel("Help/About",
+
+             tabPanel("About",
                       
-                      h3("About Plots"),
-                      p("The Plots tab contains maps and graphs summarizing the area of each
-        habitat type and its risk classification"),
-                      br(),
-                      h3("About Tables"),
-                      p("The Tables tab displays the data which the maps and graphs visualize."),
+                      h3("Current InVEST Configuration"),
+                      h4(textOutput("directory")),
+                      tableOutput("config"),
                       br(),
                       h3("About this application"),
                       p("This web application reads workspace for your recent InVEST run, 
