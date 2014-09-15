@@ -1,8 +1,8 @@
 library(shiny)
-library(leaflet)
-library(rCharts)
-library(xtable)
-library(RColorBrewer)
+# library(leaflet)
+# library(rCharts)
+# library(xtable)
+# library(RColorBrewer)
 
 
 textInputRow <- function (inputId, label, value = "", bgcol="red") {

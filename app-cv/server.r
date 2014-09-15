@@ -1,16 +1,16 @@
 library(shiny)
-library(rgdal)
-library(sp)
-library(RColorBrewer)
+# library(rgdal)
+# library(sp)
+# library(RColorBrewer)
 library(ggplot2)
-library(plyr)
-library(rgeos)
-library(raster)
+# library(plyr)
+# library(rgeos)
+# library(raster)
 library(reshape2)
 library(leaflet)
 library(rCharts)
-library(xtable)
-library(hwriter)
+# library(xtable)
+# library(hwriter)
 
 
 
@@ -67,7 +67,7 @@ LoadSpace <- function(inputX){
 L0 <- Leaflet$new()
 L0$tileLayer("https://a.tiles.mapbox.com/v3/geointerest.map-dqz2pa8r/{z}/{x}/{y}.png")
 L0$setView(c(0, 0), 1)  
-L0$set(width = 550, height = 400)
+L0$set(width = 550, height = 450) 
 
 ###### Server Function ##############
 shinyServer(function(input, output, session) {
@@ -177,22 +177,7 @@ observe({
     })
   })
   
-  
-  
-#   pointsInBounds <- reactive({
-# #     validate(
-# #       need(input$InVEST != "", "Please select an InVEST workspace")
-# #     )
-#    if (is.null(input$map_bounds))
-#      return(loadONE())
-#     bounds <- input$map_bounds
-#     latRng <- range(bounds$north, bounds$south)
-#     lngRng <- range(bounds$east, bounds$west)
-#     
-#     subset(loadONE(),
-#            lat >= latRng[1] & lat <= latRng[2] &
-#              lon >= lngRng[1] & lon <= lngRng[2])
-#   })
+
   
   ## PLoT: def function to apply a color pallette to map variable
   ## requires uploading with loadONE()
@@ -217,7 +202,7 @@ observe({
 L1 <- Leaflet$new()
 #L1$addAssets(jshead = "https://github.com/turban/Leaflet.Sync/blob/master/L.Map.Sync.js")
 L1$tileLayer("https://a.tiles.mapbox.com/v3/geointerest.map-dqz2pa8r/{z}/{x}/{y}.png")
-L1$set(width = 550, height = 400)
+L1$set(width = 550, height = 450) 
 
 ## PLOT: def function to add points and set view of leaflet
 ## calls to loadONE(), getCol()
@@ -323,7 +308,7 @@ getCol2 <- reactive({
   colbrks <- as.numeric(cut(diff$delta, breaks=c(-10, -0.0001, 0.0001, 10), labels=F))
   })
   print("Diff info")
-  #print(Breaks())
+
   print(summary(diff$delta))
   cols <- c(rgb(0,0,1), rgb(1,1,1), rgb(1,0,0))[colbrks]
   print("cols info")
@@ -344,15 +329,7 @@ getCol2 <- reactive({
 plotMap2 <- reactive({
   if (input$Difference == 0)
     return(NULL)
-#   if (is.null(input$fieldnames))
-#     return(NULL)
-#  print(input$Symbolize)
-  #isolate({
-#     df.base <- loadTWO()[[1]]
-#     df.scen <- loadTWO()[[2]]
-#     df.diff <- data.frame(df.scen[ ,input$fieldnames] - df.base[ ,input$fieldnames])
-#     names(df.diff) <- input$fieldnames
-#     df.diff <- cbind(df.base[,c("lat", "lon")], df.diff)
+
   df.diff <- Difference()
   df.diff$col <- getCol2()
   tmp.diff <- apply(df.diff, 1, as.list)
@@ -362,7 +339,7 @@ plotMap2 <- reactive({
     x$popup <- hwrite(mat)
     return(x)
   })
-  #})
+
   L2$setView(c(mean(df.diff$lat), mean(df.diff$lon)), 9)
   L2$geoJson(toGeoJSON(tmp.diff, lat='lat', lon='lon'), 
              onEachFeature = '#! function(feature, layer){
@@ -415,14 +392,17 @@ output$diffnames <- renderUI({
 
 output$Rleafmap2 <- renderMap({
   if (input$Difference == 0){
-    L0 <- Leaflet$new()
-    L0$tileLayer("https://a.tiles.mapbox.com/v3/geointerest.map-dqz2pa8r/{z}/{x}/{y}.png")
-    L0$setView(c(0, 0), 1)  
-    return(L0)
+    L01 <- Leaflet$new()
+    L01$tileLayer("https://a.tiles.mapbox.com/v3/geointerest.map-dqz2pa8r/{z}/{x}/{y}.png")
+    L01$setView(c(0, 0), 1)  
+    L01$set(width = 550, height = 450) 
+    return(L01)
   }
   plotMap2()
 })
-  
+
+
+### TABLE tab:
 output$tablenames <- renderUI({
   if (input$upload == 0)
     return(NULL)
@@ -430,7 +410,7 @@ output$tablenames <- renderUI({
     df <- loadONE()
   })
   checkboxGroupInput("tablenames", 
-              label="Select values for a table", 
+              label="Select columns for the table", 
               choices=names(df),
               selected = c("lon", "lat", "coastal_exposure")
   )
