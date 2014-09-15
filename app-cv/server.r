@@ -51,7 +51,8 @@ print("start function")
 ## Its called inside LoadONE() OR LoadTWO() - comparison
 LoadSpace <- function(inputX){
   ws <- inputX
-  ce <- read.csv(file.path(ws, "outputs/coastal_exposure/coastal_exposure.csv"), header=T)
+  #ce <- read.csv(file.path(ws, "outputs/coastal_exposure/coastal_exposure.csv"), header=T)
+  ce <- read.table(file.path(ws, "outputs/coastal_exposure/coastal_exposure.csv"), sep=",", colClasses="numeric", header=T)
   aoi <- raster(file.path(ws, "intermediate/00_preprocessing/00_PRE_aoi.tif"))
   points.wgs84 <- rgdal::project(as.matrix(ce[,1:2]), proj=projection(aoi), inv=T)
   ce <- cbind(points.wgs84, ce)
