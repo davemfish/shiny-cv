@@ -223,7 +223,7 @@ plotMap <- reactive({
       x$popup <- hwrite(mat)
       return(x)
     })
-    L0$setView(c(mean(ce$lat), mean(ce$lon)), 9)
+    L0$setView(c(ce$lat[10], ce$lon[10]), 10)
     L0$geoJson(toGeoJSON(tmp.ce, lat='lat', lon='lon'), 
                onEachFeature = '#! function(feature, layer){
       layer.bindPopup(feature.properties.popup)
@@ -294,6 +294,8 @@ Difference <- reactive({
     diff <- df.scen[ ,input$fieldnames] - df.base[ ,input$fieldnames]
     diff <- cbind(df.base[,c("lat", "lon")], diff)
     names(diff) <- c("lat", "lon", "delta")
+    diff$baseline <- df.base[ ,input$fieldnames]
+    diff$scenario <- df.scen[ ,input$fieldnames]
     print("diff summ")
     print(summary(diff))
   })
@@ -338,17 +340,18 @@ getCol2 <- reactive({
 plotMap2 <- reactive({
   if (input$Difference == 0)
     return(NULL)
+  if (is.null(input$fieldnames))
+    return(NULL)
 
   df.diff <- Difference()
   df.diff$col <- getCol2()
-  print("what's the class")
-  print(class(df.diff$delta))
-  df.diff$circ <- sapply(df.diff$delta, FUN=function(x){((sqrt(abs(x)/pi))+2)^2.5})
-  #df.diff$circ <- df.diff$delta*2
+  #print("what's the class")
+  #print(class(df.diff$delta))
+  df.diff$circ <- sapply(df.diff$delta, FUN=function(x){((sqrt(abs(x)/pi))+2)^2})
   tmp.diff <- apply(df.diff, 1, as.list)
   tmp.diff <- lapply(tmp.diff, function(x){
     mat <- as.matrix(unlist(x))
-    mat <- as.matrix(mat[!(rownames(mat) %in% c("x", "y", "array.row", "array.col", "col")),])
+    mat <- as.matrix(mat[!(rownames(mat) %in% c("x", "y", "array.row", "array.col", "col", "circ")),])
     x$popup <- hwrite(mat)
     return(x)
   })

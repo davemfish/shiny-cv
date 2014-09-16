@@ -85,7 +85,7 @@ shinyUI(#fluidPage(
                           chartOutput("Rleafmap2", 'leaflet'),
                           p(strong("BLUE"), "represents a", strong("less vulnerable"), "coastline under the scenario, compared to the baseline."),
                           p(strong('RED'), "represents a", strong("more vulnerable"), "coastline under the scenario, compared to the baseline."),
-                          p("Size of the dot represents the magnitude of change.  No dot appears where there is no change.")
+                          p("Size of the dot represents the magnitude of change.  Gray dots appear where there is no change.")
                           
                         )
                       )
