@@ -181,25 +181,27 @@ observe({
   getCol <- reactive({
     if (input$upload == 0)
       return(NULL)
+    if (is.null(input$mapvar2))
+      return(NULL)
     if (input$mapvar2 == "")
       return(NULL)
 
-    #isolate({
+    isolate({
       ce <- loadONE()
-      print(class(ce))
-      print(input$mapvar2)
+      #print(class(ce))
+      #print(input$mapvar2)
       cols <- brewer.pal(5, "YlOrRd")[as.numeric(cut(ce[[input$mapvar2]], breaks=5))]
       #print(head(cols))
       return(cols)
-    #})
+    })
   })
 
 
 ## Initialize first Leaflet Map
-L1 <- Leaflet$new()
-#L1$addAssets(jshead = "https://github.com/turban/Leaflet.Sync/blob/master/L.Map.Sync.js")
-L1$tileLayer("https://a.tiles.mapbox.com/v3/geointerest.map-dqz2pa8r/{z}/{x}/{y}.png")
-L1$set(width = 550, height = 450) 
+# L1 <- Leaflet$new()
+# #L1$addAssets(jshead = "https://github.com/turban/Leaflet.Sync/blob/master/L.Map.Sync.js")
+# L1$tileLayer("https://a.tiles.mapbox.com/v3/geointerest.map-dqz2pa8r/{z}/{x}/{y}.png")
+# L1$set(width = 550, height = 450) 
 
 ## PLOT: def function to add points and set view of leaflet
 ## calls to loadONE(), getCol()
@@ -207,7 +209,11 @@ plotMap <- reactive({
 
     if (input$upload == 0)
       return(NULL)
-    
+    if (input$mapvar2 == "")
+      return(NULL)
+    if (is.null(input$mapvar2))
+      return(NULL)
+    print("plotMap past NULLs")
     ce <- loadONE()
     ce$col <- getCol()
     tmp.ce <- apply(ce, 1, as.list)
@@ -217,8 +223,8 @@ plotMap <- reactive({
       x$popup <- hwrite(mat)
       return(x)
     })
-    L1$setView(c(mean(ce$lat), mean(ce$lon)), 9)
-    L1$geoJson(toGeoJSON(tmp.ce, lat='lat', lon='lon'), 
+    L0$setView(c(mean(ce$lat), mean(ce$lon)), 9)
+    L0$geoJson(toGeoJSON(tmp.ce, lat='lat', lon='lon'), 
                onEachFeature = '#! function(feature, layer){
       layer.bindPopup(feature.properties.popup)
     } !#',
@@ -231,15 +237,19 @@ plotMap <- reactive({
         fillOpacity: 0.8
       })
     } !#")
-    L1$enablePopover(TRUE)
-  return(L1)
+    L0$enablePopover(TRUE)
+  return(L0)
 })
 
 ## PLOT: render 1st Leaflet
 output$Rleafmap <- renderMap({
     if (input$upload == 0)
       return(L0)
-    plotMap()
+    if (is.null(input$mapvar2))
+      return(L0)
+    if (input$mapvar2 == "")
+      return(L0)
+  plotMap()
 })
 
 
@@ -284,6 +294,8 @@ Difference <- reactive({
     diff <- df.scen[ ,input$fieldnames] - df.base[ ,input$fieldnames]
     diff <- cbind(df.base[,c("lat", "lon")], diff)
     names(diff) <- c("lat", "lon", "delta")
+    print("diff summ")
+    print(summary(diff))
   })
   return(diff)
 })
@@ -329,6 +341,10 @@ plotMap2 <- reactive({
 
   df.diff <- Difference()
   df.diff$col <- getCol2()
+  print("what's the class")
+  print(class(df.diff$delta))
+  df.diff$circ <- sapply(df.diff$delta, FUN=function(x){((sqrt(abs(x)/pi))+2)^2.5})
+  #df.diff$circ <- df.diff$delta*2
   tmp.diff <- apply(df.diff, 1, as.list)
   tmp.diff <- lapply(tmp.diff, function(x){
     mat <- as.matrix(unlist(x))
@@ -336,7 +352,7 @@ plotMap2 <- reactive({
     x$popup <- hwrite(mat)
     return(x)
   })
-
+  
   L2$setView(c(mean(df.diff$lat), mean(df.diff$lon)), 9)
   L2$geoJson(toGeoJSON(tmp.diff, lat='lat', lon='lon'), 
              onEachFeature = '#! function(feature, layer){
@@ -344,7 +360,7 @@ plotMap2 <- reactive({
 } !#',
              pointToLayer =  "#! function(feature, latlng){
              return L.circleMarker(latlng, {
-             radius: feature.properties.delta*20,
+             radius: feature.properties.circ,
              fillColor: feature.properties.col || 'white',    
              color: '#000',
              weight: 1,
@@ -355,6 +371,7 @@ plotMap2 <- reactive({
   return(L2)
   })
 
+#radius: sqrt(abs(feature.properties.delta)/3.14159)+1
 
 ## COMP:
 ## Select boxes with variables common to both scenarios. Used to build a table.
