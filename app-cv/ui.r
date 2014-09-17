@@ -19,13 +19,13 @@ shinyUI(#fluidPage(
                         sidebarPanel(
                                      #selectInput("InVEST", label="Choose InVEST workspace", choices=getdir(), selected=NULL),
                                      h4("Select an InVEST run to visualize"),
-                                     p("Browse to the directory you defined as your workspace when you ran the InVEST model. 
-                                       Your workspace contains these 3 subfolders:"),
+                                     p("In this demo version we will visualize some already prepared sample data.
+                                     Click Upload Results to begin. "),
                                      p("     'intermediate'"),
                                      p("     'outputs'"),
                                      p("     'tmp'"),
-                                     textInput("InVEST", "", "Enter Workspace Path"),
-                                     actionButton("ChooseDir", "Browse"),
+                                     textInput("InVEST", "", "/srv/shiny-server/data/CV"),
+                                     #actionButton("ChooseDir", "Browse"),
                                      tags$br(),
                                      actionButton("upload", strong('Upload Results')),
                                      p(tags$small(em("(this may take a moment)"))),
@@ -49,8 +49,8 @@ shinyUI(#fluidPage(
                       sidebarLayout(
                             sidebarPanel(
                               uiOutput("tablenames"),
-                              br(),
-                              downloadButton("downloadCSV", label = "Download CSV", class = NULL)
+                              br()
+                              #downloadButton("downloadCSV", label = "Download CSV", class = NULL)
                             ),
                             mainPanel(
                               dataTableOutput("printtable"))
@@ -64,13 +64,13 @@ shinyUI(#fluidPage(
                           
                           tags$br(),
                           h5("Baseline"),
-                          textInput("Baseline", "", "Baseline workspace"),
-                          actionButton("ChooseBase", "Browse"),
+                          textInput("Baseline", "", "/srv/shiny-server/data/CV"),
+                          #actionButton("ChooseBase", "Browse"),
                           tags$br(),
                           tags$br(),
                           h5("Scenario"),
-                          textInput("Scenario", "", "Scenario workspace"),
-                          actionButton("ChooseScen", "Browse"),
+                          textInput("Scenario", "", "/srv/shiny-server/data/CV5"),
+                          #actionButton("ChooseScen", "Browse"),
                           tags$br(),
                           tags$br(),
                           actionButton("Difference", strong("Compare Results")),

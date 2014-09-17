@@ -1,0 +1,189 @@
+From 64c933a3e5e47600462b5dd11f2d6864c55b5921 Mon Sep 17 00:00:00 2001
+From: davemfish <davemfish@gmail.com>
+Date: Tue, 16 Sep 2014 17:06:53 -0700
+Subject: [PATCH 1/3] hardcoded data paths for demo version
+
+---
+ app-cv/server.r | 64 ++++++++++++++++++++++++++++-----------------------------
+ app-cv/ui.r     | 16 +++++++--------
+ 2 files changed, 40 insertions(+), 40 deletions(-)
+
+diff --git a/app-cv/server.r b/app-cv/server.r
+index 0deed3e..e53e958 100644
+--- a/app-cv/server.r
++++ b/app-cv/server.r
+@@ -69,17 +69,17 @@ L0$set(width = 550, height = 450)
+ ###### Server Function ##############
+ shinyServer(function(input, output, session) {
+   
+-  ## Browse to directory
+-  observe({ 
+-    if (input$ChooseDir == 0)
+-      return(NULL)
+-    
+-    dirname <- choose.dir()
+-    #str(input$ChooseDir)
+-    isolate({
+-      updateTextInput(session, "InVEST", "InVEST Workspace", value=dirname)
+-    })
+-  })
++#   ## Browse to directory
++#   observe({ 
++#     if (input$ChooseDir == 0)
++#       return(NULL)
++#     
++#     dirname <- choose.dir()
++#     #str(input$ChooseDir)
++#     isolate({
++#       updateTextInput(session, "InVEST", "InVEST Workspace", value=dirname)
++#     })
++#   })
+   
+   ## def function to upload results from dir
+   loadONE <- reactive({ 
+@@ -92,27 +92,27 @@ shinyServer(function(input, output, session) {
+     })
+   })
+ 
+-## COMP: Browse to baseline directory 
+-observe({ 
+-  if (input$ChooseBase == 0)
+-    return(NULL)
+-  
+-  dirname <- choose.dir()
+-  isolate({
+-    updateTextInput(session, "Baseline", "", value=dirname)
+-  })
+-})
+-
+-## COMP: Browse to scenario directory 
+-observe({ 
+-  if (input$ChooseScen == 0)
+-    return(NULL)
+-  
+-  dirname <- choose.dir()
+-  isolate({
+-    updateTextInput(session, "Scenario", "", value=dirname)
+-  })
+-})
++# ## COMP: Browse to baseline directory 
++# observe({ 
++#   if (input$ChooseBase == 0)
++#     return(NULL)
++#   
++#   dirname <- choose.dir()
++#   isolate({
++#     updateTextInput(session, "Baseline", "", value=dirname)
++#   })
++# })
++# 
++# ## COMP: Browse to scenario directory 
++# observe({ 
++#   if (input$ChooseScen == 0)
++#     return(NULL)
++#   
++#   dirname <- choose.dir()
++#   isolate({
++#     updateTextInput(session, "Scenario", "", value=dirname)
++#   })
++# })
+ 
+ ## COMP: def function to upload both sets of results
+   loadTWO <- reactive({
+diff --git a/app-cv/ui.r b/app-cv/ui.r
+index 14a2ff1..de19773 100644
+--- a/app-cv/ui.r
++++ b/app-cv/ui.r
+@@ -19,13 +19,13 @@ shinyUI(#fluidPage(
+                         sidebarPanel(
+                                      #selectInput("InVEST", label="Choose InVEST workspace", choices=getdir(), selected=NULL),
+                                      h4("Select an InVEST run to visualize"),
+-                                     p("Browse to the directory you defined as your workspace when you ran the InVEST model. 
+-                                       Your workspace contains these 3 subfolders:"),
++                                     p("In this demo version we will visualize some already prepared sample data.
++                                     Click Upload Results to begin. "),
+                                      p("     'intermediate'"),
+                                      p("     'outputs'"),
+                                      p("     'tmp'"),
+-                                     textInput("InVEST", "", "Enter Workspace Path"),
+-                                     actionButton("ChooseDir", "Browse"),
++                                     textInput("InVEST", "", "/srv/shiny-server/data/CV"),
++                                     #actionButton("ChooseDir", "Browse"),
+                                      tags$br(),
+                                      actionButton("upload", strong('Upload Results')),
+                                      p(tags$small(em("(this may take a moment)"))),
+@@ -64,13 +64,13 @@ shinyUI(#fluidPage(
+                           
+                           tags$br(),
+                           h5("Baseline"),
+-                          textInput("Baseline", "", "Baseline workspace"),
+-                          actionButton("ChooseBase", "Browse"),
++                          textInput("Baseline", "", "/srv/shiny-server/data/CV"),
++                          #actionButton("ChooseBase", "Browse"),
+                           tags$br(),
+                           tags$br(),
+                           h5("Scenario"),
+-                          textInput("Scenario", "", "Scenario workspace"),
+-                          actionButton("ChooseScen", "Browse"),
++                          textInput("Scenario", "", "/srv/shiny-server/data/CV3"),
++                          #actionButton("ChooseScen", "Browse"),
+                           tags$br(),
+                           tags$br(),
+                           actionButton("Difference", strong("Compare Results")),
+-- 
+1.9.3
+
+
+From f3f59bb4470e0999ceb5a532b6549bd90284f37b Mon Sep 17 00:00:00 2001
+From: davemfish <davemfish@gmail.com>
+Date: Tue, 16 Sep 2014 17:08:21 -0700
+Subject: [PATCH 2/3] fixed data path
+
+---
+ app-cv/ui.r | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/app-cv/ui.r b/app-cv/ui.r
+index de19773..da432ff 100644
+--- a/app-cv/ui.r
++++ b/app-cv/ui.r
+@@ -69,7 +69,7 @@ shinyUI(#fluidPage(
+                           tags$br(),
+                           tags$br(),
+                           h5("Scenario"),
+-                          textInput("Scenario", "", "/srv/shiny-server/data/CV3"),
++                          textInput("Scenario", "", "/srv/shiny-server/data/CV5"),
+                           #actionButton("ChooseScen", "Browse"),
+                           tags$br(),
+                           tags$br(),
+-- 
+1.9.3
+
+
+From 69cf53e446a792133705ccc24b124cb12c0cfce2 Mon Sep 17 00:00:00 2001
+From: davemfish <davemfish@gmail.com>
+Date: Tue, 16 Sep 2014 17:20:26 -0700
+Subject: [PATCH 3/3] removed download button for demo version
+
+---
+ app-cv/ui.r | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/app-cv/ui.r b/app-cv/ui.r
+index da432ff..a8b1fea 100644
+--- a/app-cv/ui.r
++++ b/app-cv/ui.r
+@@ -49,8 +49,8 @@ shinyUI(#fluidPage(
+                       sidebarLayout(
+                             sidebarPanel(
+                               uiOutput("tablenames"),
+-                              br(),
+-                              downloadButton("downloadCSV", label = "Download CSV", class = NULL)
++                              br()
++                              #downloadButton("downloadCSV", label = "Download CSV", class = NULL)
+                             ),
+                             mainPanel(
+                               dataTableOutput("printtable"))
+-- 
+1.9.3
+

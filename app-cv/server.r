@@ -69,17 +69,17 @@ L0$set(width = 550, height = 450)
 ###### Server Function ##############
 shinyServer(function(input, output, session) {
   
-  ## Browse to directory
-  observe({ 
-    if (input$ChooseDir == 0)
-      return(NULL)
-    
-    dirname <- choose.dir()
-    #str(input$ChooseDir)
-    isolate({
-      updateTextInput(session, "InVEST", "InVEST Workspace", value=dirname)
-    })
-  })
+#   ## Browse to directory
+#   observe({ 
+#     if (input$ChooseDir == 0)
+#       return(NULL)
+#     
+#     dirname <- choose.dir()
+#     #str(input$ChooseDir)
+#     isolate({
+#       updateTextInput(session, "InVEST", "InVEST Workspace", value=dirname)
+#     })
+#   })
   
   ## def function to upload results from dir
   loadONE <- reactive({ 
@@ -92,27 +92,27 @@ shinyServer(function(input, output, session) {
     })
   })
 
-## COMP: Browse to baseline directory 
-observe({ 
-  if (input$ChooseBase == 0)
-    return(NULL)
-  
-  dirname <- choose.dir()
-  isolate({
-    updateTextInput(session, "Baseline", "", value=dirname)
-  })
-})
-
-## COMP: Browse to scenario directory 
-observe({ 
-  if (input$ChooseScen == 0)
-    return(NULL)
-  
-  dirname <- choose.dir()
-  isolate({
-    updateTextInput(session, "Scenario", "", value=dirname)
-  })
-})
+# ## COMP: Browse to baseline directory 
+# observe({ 
+#   if (input$ChooseBase == 0)
+#     return(NULL)
+#   
+#   dirname <- choose.dir()
+#   isolate({
+#     updateTextInput(session, "Baseline", "", value=dirname)
+#   })
+# })
+# 
+# ## COMP: Browse to scenario directory 
+# observe({ 
+#   if (input$ChooseScen == 0)
+#     return(NULL)
+#   
+#   dirname <- choose.dir()
+#   isolate({
+#     updateTextInput(session, "Scenario", "", value=dirname)
+#   })
+# })
 
 ## COMP: def function to upload both sets of results
   loadTWO <- reactive({
