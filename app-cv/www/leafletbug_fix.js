@@ -1,0 +1,1 @@
+L.Circle.prototype._checkIfEmpty = function () { return false; };

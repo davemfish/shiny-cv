@@ -347,7 +347,7 @@ plotMap2 <- reactive({
   df.diff$col <- getCol2()
   #print("what's the class")
   #print(class(df.diff$delta))
-  df.diff$circ <- sapply(df.diff$delta, FUN=function(x){((sqrt(abs(x)/pi))+2)^2})
+  df.diff$circ <- sapply(df.diff$delta, FUN=function(x){((sqrt(abs(x)/pi))+1.5)^2.5})
   tmp.diff <- apply(df.diff, 1, as.list)
   tmp.diff <- lapply(tmp.diff, function(x){
     mat <- as.matrix(unlist(x))
