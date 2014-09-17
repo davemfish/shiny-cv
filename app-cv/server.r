@@ -237,7 +237,6 @@ plotMap <- reactive({
         fillOpacity: 0.8
       })
     } !#")
-    L0$enablePopover(TRUE)
   return(L0)
 })
 
@@ -370,7 +369,6 @@ plotMap2 <- reactive({
              fillOpacity: 0.65
              })
 } !#")
-  L2$enablePopover(TRUE)
   return(L2)
   })
 
